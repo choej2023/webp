@@ -1,0 +1,20 @@
+.searchForm {
+    display: flex;
+}
+
+.opt {
+    margin: 10px;
+    text-align: center;
+}
+
+.opt::after {
+    border: 15px solid lightgray;
+}
+
+.opt label:nth-child(n), .searchButton {
+    margin-right: 10px;
+}
+
+.searchButton {
+    width: 100px;
+}
