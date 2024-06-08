@@ -49,11 +49,17 @@ export default function Main() {
         });
     }, [])
 
+    const logout = () => {
+        localStorage.clear()
+        navigator('/')
+    };
+
     return (
         <div className="container">
             <div className="upper-menu">
                 <button onClick={() => navigator('/enrollCampground')}>캠핑장 등록</button>
                 <button onClick={() => navigator('/myPage')}>마이페이지</button>
+                <button onClick={logout}>로그아웃</button>
             </div>
             <TopBar formData={formData}
                     handleChange={handleChange}
