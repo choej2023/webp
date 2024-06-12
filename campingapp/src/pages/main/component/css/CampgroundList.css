@@ -1,0 +1,22 @@
+.campground {
+    display: flex;
+    align-items: center;
+    margin: 15px;
+    padding: 15px;
+    border: 1px solid #000;
+}
+
+.campground:hover {
+    cursor: pointer;
+}
+
+.campground img {
+    margin-right: 20px;
+    width: 250px;
+    object-fit: contain;
+}
+
+.campground div {
+    padding: 10px;
+    border: 1px solid #000;
+}

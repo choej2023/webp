@@ -1,0 +1,21 @@
+
+.loginForm {
+    display: flex;
+    flex-direction: column;
+    align-content: center;
+    padding: 10px;
+}
+
+.loginForm div {
+    text-align: right;
+    margin: 10px;
+}
+
+.loginForm div label {
+    margin: 20px;
+}
+
+button {
+    width: 50%;
+    align-self: center;
+}
