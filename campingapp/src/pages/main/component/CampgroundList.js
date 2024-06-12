@@ -6,7 +6,7 @@ export default function CampgroundList({list}) {
     const handleClick = (item) => (e) => {
         e.preventDefault()
         console.log(item)
-        navigator('/campgroundDetail', {state: {item: item}})
+        navigator(`/main/campingDetail/${item.campground_id}`, {state: {item: item}})
     };
 
     return (
