@@ -14,7 +14,7 @@ export default function CampgroundList({list}) {
             {list.map((item, index) => (
                 <div key={index} className="campground"
                      onClick={handleClick(item)}>
-                    <img src={item.main_photo} alt={item.name}/>
+                    <img src={require(`../../../uploads/${item.main_photo}`)} alt={item.name}/>
                     <div>
                         <h2>{item.name}</h2>
                         <h3>{item.address}</h3>

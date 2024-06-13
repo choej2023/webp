@@ -11,12 +11,13 @@ const port = 8080; // 포트를 8080으로 설정
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static(uploadFolder));
 app.use(bodyParser.json());
 app.use(cors());
 
 
 // uploads 폴더가 없으면 생성
-const uploadDir = path.join(__dirname, 'uploads');
+const uploadDir = path.join(__dirname, uploadFolder);
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -259,19 +260,17 @@ app.post('/filter', (req, res) => {
     }
 
     // 이미지 URL을 포함한 응답 데이터 생성
-    const response = results.map(campground => ({
-      ...campground,
-      main_photo: campground.main_photo ? `http://localhost:${port}/${uploadFolder}/${path.basename(campground.main_photo)}` : null
-    }));
+    const response = results
 
     return res.status(200).send(response);
   });
 });
 
 // 이미지 파일 제공
-app.get(`${uploadFolder}/:filename`, (req, res) => {
+app.get(`/:filename`, (req, res) => {
   const filename = req.params.filename;
   const filePath = path.join(__dirname, uploadFolder, filename);
+  console.log("hello", filePath, filename)
   res.sendFile(filePath, err => {
     if (err) {
       res.status(404).send('image not found');
