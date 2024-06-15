@@ -15,7 +15,10 @@ function App() {
             <Route path='/myPage' element={<MyPage/>}></Route>
             <Route path='/enrollCampground' element={<EnrollCamp/>}></Route>
             <Route path='/campgroundDetail' element={<CampgroundDetail/>}></Route>
-            // 위에서 아래로
+
             <Route path="/campingDetail/:campgroundId" element={<CampingDetail/>}></Route>
         </Routes>
     );
+}
+
+export default App;

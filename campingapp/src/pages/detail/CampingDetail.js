@@ -47,7 +47,7 @@ const CampingDetail = () => {
 
   //캠핑장 정보를 가져오는 함수
   const fetchData = () => {
-    fetch(`http://localhost:3001/campingDetail/${campgroundId}`)
+    fetch(`http://localhost:8080/main/campingDetail/${campgroundId}`)
       .then((response) => {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -64,7 +64,7 @@ const CampingDetail = () => {
   };
   //캠핑장 대표 사진을 가져오는 함수
   const fetchMainPhoto = () => {
-    fetch(`http://localhost:3001/campingDetail/${campgroundId}/main_photo`)
+    fetch(`http://localhost:8080/main/campingDetail/${campgroundId}/main_photo`)
       .then((response) => response.json())
       .then((data) => {
         setMainPhoto(data.main_photo);
@@ -75,7 +75,7 @@ const CampingDetail = () => {
   };
   //시설 정보를 가져오는 함수
   const fetchAmenities = () => {
-    fetch(`http://localhost:3001/campingDetail/${campgroundId}/amenities`)
+    fetch(`http://localhost:8080/main/campingDetail/${campgroundId}/amenities`)
       .then((response) => response.json())
       .then((data) => {
         setAmenities(data);
@@ -87,7 +87,7 @@ const CampingDetail = () => {
 
   //캠핑장 리뷰 데이터를 가져오는 함수
   const fetchReviews = () => {
-    fetch(`http://localhost:3001/campingDetail/${campgroundId}/reviews`)
+    fetch(`http://localhost:8080/main/campingDetail/${campgroundId}/reviews`)
       .then((response) => response.json())
       .then((data) => {
         // campgroundId에 해당하는 리뷰만 필터링
@@ -102,7 +102,7 @@ const CampingDetail = () => {
   };
   //캠핑장 사이트 데이터를 가져오는 함수
   const fetchSites = () => {
-    fetch(`http://localhost:3001/campingDetail/${campgroundId}/campsite`)
+    fetch(`http://localhost:8080/main/campingDetail/${campgroundId}/campsite`)
       .then((response) => response.json())
       .then((data) => {
         setSiteList(data);
@@ -113,7 +113,7 @@ const CampingDetail = () => {
   };
   //캠핑장 예약 정보를 가져오는 함수
   const fetchReservation = () => {
-    fetch(`http://localhost:3001/campingDetail/${campgroundId}/reserve`)
+    fetch(`http://localhost:8080/main/campingDetail/${campgroundId}/reserve`)
       .then((response) => response.json())
       .then((data) => {
         setReservation(data);
@@ -136,7 +136,7 @@ const CampingDetail = () => {
       status,
       campgroundId,
     };
-    fetch("http://localhost:3001/reserve", {
+    fetch("http://localhost:8080/main/reserve", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -186,7 +186,7 @@ const CampingDetail = () => {
     formData.append("text", text);
     formData.append("photo", photo);
 
-    fetch(`http://localhost:3001/campingDetail/${campgroundId}/reviews`, {
+    fetch(`http://localhost:8080/main/campingDetail/${campgroundId}/reviews`, {
       method: "POST",
       body: formData,
     })
