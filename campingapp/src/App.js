@@ -5,7 +5,7 @@ import Main from "./pages/main/Main";
 import CampgroundDetail from "./pages/main/component/CampgroundDetail";
 import MyPage from "./pages/main/component/MyPage";
 import EnrollCamp from "./pages/main/component/EnrollCamp";
-import CampingDetail from "./pages/detail/CampingDetail";
+import CampingDetail from "./pages/detail/CampingDetail"
 
 function App() {
     return (
@@ -15,7 +15,11 @@ function App() {
             <Route path='/myPage' element={<MyPage/>}></Route>
             <Route path='/enrollCampground' element={<EnrollCamp/>}></Route>
             <Route path='/campgroundDetail' element={<CampgroundDetail/>}></Route>
-            // 위에서 아래로
-            <Route path="/campingDetail/:campgroundId" element={<CampingDetail/>}></Route>
+
+            {/*위에서 아래로*/}
+            <Route path="/main/campingDetail/:campgroundId" element={<CampingDetail/>}></Route>
         </Routes>
     );
+}
+
+export default App;

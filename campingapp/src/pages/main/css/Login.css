@@ -19,3 +19,12 @@ button {
     width: 50%;
     align-self: center;
 }
+
+
+
+.loginBody{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}

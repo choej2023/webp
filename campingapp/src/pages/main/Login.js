@@ -30,6 +30,7 @@ export default function Login() {
     }
 
     return (
+        <div className='loginBody'>
         <form onSubmit={handleSubmit}>
             <fieldset className="loginForm">
                 <legend>로그인</legend>
@@ -50,5 +51,6 @@ export default function Login() {
                 <button type="submit">로그인</button>
             </fieldset>
         </form>
+        </div>
     )
 }
