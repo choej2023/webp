@@ -3,9 +3,10 @@ import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import './css/campingDetail.css';
-import { useParams } from "react-router-dom";
+import { useParams} from "react-router-dom";
 
 const CampingDetail = () => {
+
   const settings = {
     dots: false,
     infinite: false,
@@ -17,6 +18,7 @@ const CampingDetail = () => {
   };
   // 상태 변수 정의
   const [campsite_id, setcampsite_id] = useState("");
+  const [clickCampsite, setClickCampsite] = useState("");
   const [checkInDate, setCheckInDate] = useState("");
   const [checkOutDate, setCheckOutDate] = useState("");
   const [adults, setAdults] = useState("");
@@ -32,6 +34,7 @@ const CampingDetail = () => {
   const [reservation, setReservation] = useState([]);
   const [mainPhoto, setMainPhoto] = useState("");
   const [amenities, setAmenities] = useState([]);
+  const [dateError, setDateError] = useState("");
 
   useEffect(() => {
     if (campgroundId) {
@@ -131,6 +134,15 @@ const CampingDetail = () => {
   // 예약 처리 함수
   const handleReservation = (e) => {
     e.preventDefault();
+
+    const today = new Date().toISOString().split("T")[0];
+    if (checkInDate < today || checkOutDate < today) {
+      setDateError("오늘 이후 날짜만 예약이 가능합니다.");
+      alert("오늘 이후 날짜만 예약이 가능합니다.");
+      return;
+    }
+    setDateError(""); // Clear any previous date error message
+
     const reservationData = {
       campsite_id,
       checkInDate: checkInDate,
@@ -171,7 +183,9 @@ const CampingDetail = () => {
 
   // 사이트 클릭 핸들러 함수
   const handleSiteClick = (number) => {
-    setcampsite_id(number);
+    setcampsite_id(number.slice(number.length - 1, number.length));
+
+    setClickCampsite(number);
   };
 
   //리뷰 등록
@@ -211,6 +225,34 @@ const CampingDetail = () => {
       });
   };
 
+  // 날짜 조회 버튼 클릭 핸들러
+  const checkDate = () => {
+    const targetStartDate = new Date(checkInDate);
+    const targetEndDate = new Date(checkOutDate);
+    console.log(targetStartDate)
+    console.log(targetEndDate)
+
+    const updatedSiteList = siteList.map((site,index) => {
+      const isReserved = reservation.some((reservation) => {
+        const reservationStartDate = new Date(reservation.check_in_date);
+        const reservationEndDate = new Date(reservation.check_out_date);
+
+        return (
+          reservation.campsite_id === (index+1) &&
+          reservation.status === "pending" &&
+          !(targetEndDate < reservationStartDate || targetStartDate > reservationEndDate)
+        );
+      });
+
+      return {
+        ...site,
+        status: isReserved ? "대기" : "가능",
+      };
+    });
+
+    setSiteList(updatedSiteList);
+  };
+
   return (
     <div className="camping_container">
       <div className="container">
@@ -230,7 +272,7 @@ const CampingDetail = () => {
           <input
             type="text"
             placeholder="사이트 이름"
-            value={campsite_id}
+            value={clickCampsite}
             onChange={(e) => setcampsite_id(e.target.value)}
           />
           <input
@@ -264,7 +306,7 @@ const CampingDetail = () => {
         <div className="camping-info" id="camping-info">
           <h3>캠핑장 정보</h3>
           <p>
-            <strong>{campgroundId}번 캠핑장:</strong> {campingInfo.name}
+            <strong>캠핑장:</strong> {campingInfo.name}
           </p>
           <p>
             <strong>숙소 소개:</strong> {campingInfo.description}
@@ -292,7 +334,7 @@ const CampingDetail = () => {
           <div
             key={site.id}
             className="site-item"
-            onClick={() => handleSiteClick(index + 1)}
+            onClick={() => handleSiteClick(site.name)}
           >
             <img src={site.photo} alt="" className="site-image" />
             <div className="site-details">
@@ -306,17 +348,8 @@ const CampingDetail = () => {
                 <strong>수용 인원:</strong> {site.capacity}
               </p>
               <p>
-                <strong>상태: </strong>
-                {reservation.some(
-                  (reservation) =>         
-                    (reservation.campsite_id === (index + 1)) &&
-                    reservation.status === "pending"
-                )
-                  ? "대기"
-                  : "가능" 
-                  
-                  }
-                  
+                <strong>상태: </strong> {site.status}
+
               </p>
             </div>
           </div>
@@ -331,7 +364,9 @@ const CampingDetail = () => {
               {amenities
                 .filter((amenity) => amenity.type !== null)
                 .map((amenity, index) => (
-                  <li key={index} className="item">{amenity.type}</li>
+                  <li key={index} className="item">
+                    {amenity.type}
+                  </li>
                 ))}
             </ul>
           </div>
@@ -341,7 +376,9 @@ const CampingDetail = () => {
               {amenities
                 .filter((amenity) => amenity.play !== null)
                 .map((amenity, index) => (
-                  <li key={index} className="item">{amenity.play}</li>
+                  <li key={index} className="item">
+                    {amenity.play}
+                  </li>
                 ))}
             </ul>
           </div>
@@ -351,7 +388,9 @@ const CampingDetail = () => {
               {amenities
                 .filter((amenity) => amenity.view !== null)
                 .map((amenity, index) => (
-                  <li key={index} className="item">{amenity.view}</li>
+                  <li key={index} className="item">
+                    {amenity.view}
+                  </li>
                 ))}
             </ul>
           </div>

@@ -23,11 +23,14 @@
 
 .reservation{
   float:right;
-  margin-top: -250px;
+  margin-top: -300px;
   margin-right: -20px;
   width: 700px;
   height: 100px;
-  
+
+}
+.reservation h2{
+  padding: 25px;
 }
 .reservation input{
   height: 50px;
@@ -44,7 +47,7 @@
   
   float: right;
   
-  margin-top: -100px;
+  margin-top: -0.1px;
   width: 680px;
   height: 500px;
 }
