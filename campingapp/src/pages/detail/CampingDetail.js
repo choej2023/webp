@@ -1,9 +1,8 @@
-import React, { useEffect } from "react";
+import React, {useEffect, useState} from "react";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import "./css/campingDetail.css";
-import { useState } from "react";
 import { useParams } from "react-router-dom";
 
 const CampingDetail = () => {
@@ -58,7 +57,6 @@ const CampingDetail = () => {
       })
       .then((data) => {
         setCampingInfo(data);
-        console.log("캠핑 정보: ", data);
       })
       .catch((error) => {
         setError(error.message || "An error occurred");
@@ -69,7 +67,7 @@ const CampingDetail = () => {
     fetch(`http://localhost:8080/main/campingDetail/${campgroundId}/main_photo`)
       .then((response) => response.json())
       .then((data) => {
-        setMainPhoto(data.main_photo);
+        setMainPhoto(data);
       })
       .catch((error) => {
         console.log("An error occured: ", error);
@@ -205,6 +203,7 @@ const CampingDetail = () => {
     const formData = new FormData();
     formData.append("text", text);
     formData.append("photo", photo);
+    formData.append("user_id", localStorage.getItem("user_id"))
 
     fetch(`http://localhost:8080/main/campingDetail/${campgroundId}/reviews`, {
       method: "POST",
@@ -260,10 +259,7 @@ const CampingDetail = () => {
           <Slider {...settings}>
             {mainPhoto && (
               <div key={mainPhoto}>
-                <img
-                  src={require(`../../../uploads/${mainPhoto}`)}
-                  alt="Main"
-                />
+                <img src={require(`../../../uploads/${mainPhoto}`)} alt="Main" />
               </div>
             )}
           </Slider>
@@ -303,7 +299,7 @@ const CampingDetail = () => {
             value={children}
             onChange={(e) => setChildren(e.target.value)}
           />
-          <button onClick={checkDate}>날짜 조회</button>
+
           <button onClick={handleReservation}>예약하기</button>
         </div>
         <div className="camping-info" id="camping-info">
@@ -339,7 +335,7 @@ const CampingDetail = () => {
             className="site-item"
             onClick={() => handleSiteClick(site.name)}
           >
-            <img src={require(`../../../uploads/${site.photo}`)} alt="" />
+            <img src={site.photo} alt="" className="site-image" />
             <div className="site-details">
               <p>
                 <strong>{site.name}</strong>
@@ -408,7 +404,7 @@ const CampingDetail = () => {
               <div className="review-info">
                 <img
                   className="review-image"
-                  src={require(`../../../uploads/${review.photo}`)}
+                  src={review.photo}
                   alt=""
                 />
                 <p className="review-text">{review.text}</p>

@@ -11,7 +11,7 @@ const port = 8080; // 포트를 8080으로 설정
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(uploadFolder));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(bodyParser.json());
 app.use(cors());
 
@@ -27,8 +27,7 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
-    const filename = file.originalname.split('\\').pop()
-    cb(null, filename);
+    cb(null, Date.now() + path.extname(file.originalname));
   }
 });
 
@@ -71,7 +70,11 @@ app.get('/main/campingDetail/:campgroundId', (req, res) => {
       return;
     }
     // 결과를 화면에 출력
-    res.json(results[0]);
+    const response = results.map(campground => ({
+      ...campground,
+      main_photo: campground.main_photo ? `http://localhost:8080/${uploadFolder}/${path.basename(campground.main_photo)}` : null
+    }));
+    res.status(200).json(response[0])
   });
 });
 
@@ -84,7 +87,7 @@ app.get('/main/campingDetail/:campgroundId/main_photo', (req, res) => {
       console.error("이미지 조회 실패", error);
       res.status(500).send("서버 오류: 이미지 조회 실패");
     } else {
-      res.json(results[0]); // main_photo가 한 개만 있을 것으로 가정
+      res.json(`http://localhost:8080/${uploadFolder}/${path.basename(results[0].main_photo)}`); // main_photo가 한 개만 있을 것으로 가정
     }
   });
 });
@@ -112,7 +115,11 @@ app.get('/main/campingDetail/:campgroundId/reviews', (req, res) => {
       console.error('리뷰 데이터 조회 실패', error);
       res.status(500).send('서버 오류: 리뷰 데이터 조회 실패');
     } else {
-      res.json(result);
+      const response = result.map(reviews => ({
+        ...reviews,
+        photo: reviews.photo ? `http://localhost:8080/${uploadFolder}/${path.basename(reviews.photo)}` : null
+      }));
+      res.json(response);
     }
   });
 });
@@ -127,7 +134,11 @@ app.get('/main/campingDetail/:campgroundId/campsite', (req, res) => {
       console.error('캠프 사이트 조회 실패', error);
       res.status(500).send('서버 오류: 캠프 사이트 조회 실패');
     } else {
-      res.json(result);
+      const response = result.map(sites => ({
+        ...sites,
+        photo: sites.photo ? `http://localhost:8080/${uploadFolder}/${path.basename(sites.photo)}` : null
+      }));
+      res.json(response);
     }
   });
 });
@@ -150,6 +161,7 @@ app.get('/main/campingDetail/:campgroundId/reserve', (req, res) => {
 // 캠핑장 예약 정보를 저장하는 API
 app.post('/main/campingDetail/:campgroundId/reserve', (req, res) => {
   const { campsite_id, checkInDate, checkOutDate, adults, children, status, campgroundId } = req.body;
+
 
   // 날짜 겹침 확인 쿼리
   const overlapQuery = `
@@ -183,11 +195,12 @@ app.post('/main/campingDetail/:campgroundId/reserve', (req, res) => {
 // 캠핑장 리뷰 정보를 저장하는 API
 app.post('/main/campingDetail/:campgroundId/reviews', upload.single('photo'), (req, res) => {
   const { campgroundId } = req.params;
-  const { text } = req.body;
+  const { text, user_id } = req.body;
   const photo = req.file ? `${req.file.filename}` : null; // 수정된 이미지 파일 이름 사용
+  console.log(req.body)
 
-  const query = 'INSERT INTO reviews (campground_id, text, photo) VALUES (?, ?, ?)';
-  const values = [campgroundId, text, photo];
+  const query = 'INSERT INTO reviews (campground_id, user_id, text, photo) VALUES (?, ?, ?, ?)';
+  const values = [campgroundId, user_id, text, photo];
 
   db.query(query, values, (error, results) => {
     if (error) {
@@ -198,7 +211,7 @@ app.post('/main/campingDetail/:campgroundId/reviews', upload.single('photo'), (r
   });
 });
 
-// 로그인 API
+// 로그인3 API
 app.post('/login', (req, res) => {
   const { id, pw } = req.body;
   const query = `SELECT user_id FROM users WHERE name = ? AND password = ?`;
@@ -219,30 +232,28 @@ app.post('/login', (req, res) => {
 app.post('/filter', (req, res) => {
   const { name, checkIn, checkOut, address, type } = req.body;
   let query = `
-    SELECT campgrounds.*, 
-           GROUP_CONCAT(distinct campgroundtype.type SEPARATOR ', ') as types,
-           GROUP_CONCAT(distinct amenities.type separator ', ') as amenities
+    SELECT campgrounds.*,
+           GROUP_CONCAT(distinct campgroundtype.type SEPARATOR ', ') as types
     FROM campgrounds
-             LEFT OUTER JOIN campgroundtype ON campgrounds.campground_id = campgroundtype.campground_id
-             LEFT OUTER JOIN amenities ON campgrounds.campground_id = amenities.campground_id
+           LEFT OUTER JOIN campgroundtype ON campgrounds.campground_id = campgroundtype.campground_id
     WHERE 1 = 1
   `;
   let queryParams = [];
 
   if (name) {
-    query += `AND campgrounds.name LIKE ? `;
+    query += ` AND campgrounds.name LIKE ? `;
     queryParams.push(`%${name}%`);
   }
   if (address) {
-    query += `AND campgrounds.address LIKE ? `;
+    query += ` AND campgrounds.address LIKE ? `;
     queryParams.push(`%${address}%`);
   }
   if (type) {
-    query += `AND campgroundtype.type = ? `;
+    query += ` AND campgroundtype.type = ? `;
     queryParams.push(type);
   }
   if (checkIn !== '' && checkOut !== '') {
-    query += `AND campgrounds.campground_id NOT IN (
+    query += ` AND campgrounds.campground_id NOT IN (
       SELECT campgrounds.campground_id
       FROM campgrounds
       JOIN campsites ON campgrounds.campground_id = campsites.campground_id
@@ -262,14 +273,66 @@ app.post('/filter', (req, res) => {
     }
 
     // 이미지 URL을 포함한 응답 데이터 생성
-    const response = results
-
+    const response = results.map(campground => ({
+      ...campground,
+      main_photo: campground.main_photo ? `http://localhost:8080/${uploadFolder}/${path.basename(campground.main_photo)}` : null
+    }));
     return res.status(200).send(response);
   });
 });
 
+// 캠핑장 등록 API
+app.post('/enroll', upload.single('main_photo'), (req, res) => {
+  const { userId, name, description, address, contact, check_in_time, check_out_time, manner_start_time, manner_end_time, amenities} = req.body;
+  const main_photo = req.file ? `${req.file.filename}` : null; // 수정된 이미지 파일 이름 사용
+
+  const query = 'INSERT INTO campgrounds (user_id, name, address, contact, description, check_in_time, check_out_time, manner_start_time, manner_end_time, main_photo, amenities) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+
+  db.query(query, [userId, name, address, contact, description, check_in_time, check_out_time, manner_start_time, manner_end_time, main_photo, amenities], (error, results) => {
+    if (error) {
+      return res.status(500).json({ error: '캠핑장정보 등록 실패' });
+    }
+    const insertId = results.insertId;
+    res.json({ success: true, id: insertId });
+  });
+});
+
+// 캠핑장타입 등록 API
+app.post('/enrollType', (req, res) => {
+  const { campgroundType, id } = req.body;
+
+  console.log('Received data:', req.body); // req.body 출력
+
+  const query = 'INSERT INTO campgroundtype (campground_id, type) VALUES (?, ?)';
+
+  db.query(query, [id, campgroundType], (error, results) => {
+    if (error) {
+      console.error('캠핑장타입 등록 실패:', error);
+      return res.status(500).json({ error: '캠핑장타입 등록 실패' });
+    }
+    res.json({ success: true});
+  });
+});
+
+// 사이트 등록 API
+app.post('/site', upload.single('photo'), (req, res) => {
+  const { campId, name, rate, capacity } = req.body;
+  const photo = req.file ? req.file.filename : null;
+
+  const query = 'INSERT INTO campsites (campground_id, name, rate, capacity, photo) VALUES (?, ?, ?, ?, ?)';
+
+  db.query(query, [campId, name, rate, capacity, photo], (error, results) => {
+    if (error) {
+      console.error('사이트 등록 실패:', error);
+      return res.status(500).json({ error: '사이트 등록 실패' });
+    }
+    res.json({ success: true });
+  });
+});
+
+
 // 이미지 파일 제공
-app.get(`/:filename`, (req, res) => {
+app.get(`${uploadFolder}/:filename`, (req, res) => {
   const filename = req.params.filename;
   const filePath = path.join(__dirname, uploadFolder, filename);
   console.log("hello", filePath, filename)
