@@ -94,3 +94,9 @@
     align-self: center;
     border-radius: 10px;
 }
+
+.enrollContent img {
+  width: 100%;
+  height: auto;
+  display: block;
+}

@@ -37,7 +37,6 @@ const CampingDetail = () => {
   const [siteList, setSiteList] = useState([]);
   const [reservation, setReservation] = useState([]);
   const [mainPhoto, setMainPhoto] = useState("");
-  const [amenities, setAmenities] = useState([]);
   const [dateError, setDateError] = useState("");
 
   useEffect(() => {
@@ -47,7 +46,6 @@ const CampingDetail = () => {
       fetchSites();
       fetchReservation();
       fetchMainPhoto();
-      fetchAmenities();
     }
   }, [campgroundId]);
 
@@ -73,17 +71,6 @@ const CampingDetail = () => {
       .then((response) => response.json())
       .then((data) => {
         setMainPhoto(data);
-      })
-      .catch((error) => {
-        console.log("An error occured: ", error);
-      });
-  };
-  //시설 정보를 가져오는 함수
-  const fetchAmenities = () => {
-    fetch(`http://localhost:8080/main/campingDetail/${campgroundId}/amenities`)
-      .then((response) => response.json())
-      .then((data) => {
-        setAmenities(data);
       })
       .catch((error) => {
         console.log("An error occured: ", error);
@@ -156,7 +143,7 @@ const CampingDetail = () => {
       status,
       campgroundId,
     };
-    fetch(`http://localhost:8080/main/campingDetail/${campgroundId}/reserve`, {
+    fetch(`http://localhost:8080/main/campingDetail/${campgroundId}/reserve/${localStorage.getItem("user_id")}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -263,7 +250,7 @@ const CampingDetail = () => {
         <div className="carousel-container">
           <Slider {...settings}>
             {mainPhoto && (
-              <div key={mainPhoto}>
+              <div key={mainPhoto} className="image-container">
                 <img src={mainPhoto} alt="Main" className="image"/>
               </div>
             )}
@@ -272,7 +259,7 @@ const CampingDetail = () => {
           </Slider>
         </div>
         <div className="reservation">
-          <button onClick={() => navigate('/modifyCamp', {state: {campgroundId: campgroundId, campingInfo: campingInfo, type: item.types}})}>수정</button>
+          <button onClick={() => navigate('/modifyCamp', {state: {campgroundId, campingInfo, siteList}})}>수정</button>
           <h2>캠핑장 예약</h2>
           <input
             type="text"
@@ -305,7 +292,7 @@ const CampingDetail = () => {
             onChange={(e) => setChildren(e.target.value)}
           />
 
-
+<button onClick={checkDate}>날짜 조회</button>
           <button onClick={handleReservation}>예약하기</button>
         </div>
         <div className="camping-info" id="camping-info">
@@ -335,6 +322,9 @@ const CampingDetail = () => {
             <strong>매너타임:</strong> {campingInfo.manner_start_time} ~{" "}
             {campingInfo.manner_end_time}
           </p>
+          <p>
+            <strong>편의시설: </strong> {campingInfo.amenities}
+          </p>
         </div>
       </div>
       <div className="site-list">
@@ -356,53 +346,12 @@ const CampingDetail = () => {
                 <strong>수용 인원:</strong> {site.capacity}
               </p>
               <p>
-                <strong>상태: </strong> {site.status}
+                <strong>상태: </strong> {site.status === 'pending' ? "대기 중" : (site.status === 'Confirmed') ? "불가능" : "가능"}
 
               </p>
             </div>
           </div>
         ))}
-      </div>
-      <div className="facility-information">
-        <h2>{campingInfo.name} 캠핑장</h2>
-        <div className="facility-container">
-          <div className="section">
-            <h2>부대시설</h2>
-            <ul>
-              {amenities
-                .filter((amenity) => amenity.type !== null)
-                .map((amenity, index) => (
-                  <li key={index} className="item">
-                    {amenity.type}
-                  </li>
-                ))}
-            </ul>
-          </div>
-          <div className="section">
-            <h2>놀거리</h2>
-            <ul>
-              {amenities
-                .filter((amenity) => amenity.play !== null)
-                .map((amenity, index) => (
-                  <li key={index} className="item">
-                    {amenity.play}
-                  </li>
-                ))}
-            </ul>
-          </div>
-          <div className="section">
-            <h2>주변 환경</h2>
-            <ul>
-              {amenities
-                .filter((amenity) => amenity.view !== null)
-                .map((amenity, index) => (
-                  <li key={index} className="item">
-                    {amenity.view}
-                  </li>
-                ))}
-            </ul>
-          </div>
-        </div>
       </div>
       <h2>{campingInfo.name} 리뷰 목록</h2>
 

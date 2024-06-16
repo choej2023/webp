@@ -1,143 +1,196 @@
 import "./EnrollCamp.css";
-import React, { useState } from "react";
+import React, {useEffect, useState} from "react";
 import axios from 'axios';
 import {useLocation, useNavigate} from "react-router-dom";
-import { REQUEST } from "../../config";
+import {baseURL, REQUEST} from "../../config";
+import campingDetail from "../detail/CampingDetail";
 
-const EnrollCamp = () => {
-    const navigator = useNavigate();
 
+
+const ModifyCamp = () => {
+    //=======================================================
+    // fetch data
     const location = useLocation()
-    const {campgroundId, campingInfo} = location.state || {}
+    const {campgroundId} = location.state || {}
+    const [campingInfo, setCampingInfo] = useState({});
+    const { siteList } = location.state || [];
+    const [campsiteInfo, setCampsiteInfo] = useState([]);
+    const [Error,setError] = useState("");
 
-    const [enroll, setEnroll] = useState({
-        userId: localStorage.getItem("user_id"),
-        campgroundType: "",
-        name: "",
-        description: "",
-        address: "",
-        contact: "",
-        check_in_time: "",
-        check_out_time: "",
-        manner_start_time: "",
-        manner_end_time: "",
-        main_photo: null,
-        amenities: "",
-    });
+    const [campType, setCampType] = useState({});
 
-    // 사이트 정보
-    const [campsite, setCampsite] = useState({
-        site_name1: "",
-        site_rate1: "",
-        site_capacity1: "",
-        site_photo1: null,
+    useEffect(() => {
+        if (campgroundId) {
+            fetchSites();
+            fetchType();
+            fetchData();
+            console.log(campingInfo)
 
-        site_name2: "",
-        site_rate2: "",
-        site_capacity2: "",
-        site_photo2: null,
-
-        site_name3: "",
-        site_rate3: "",
-        site_capacity3: "",
-        site_photo3: null,
-
-        site_name4: "",
-        site_rate4: "",
-        site_capacity4: "",
-        site_photo4: null,
-    });
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        if (name.startsWith("site_")) {
-            setCampsite((prev) => ({ ...prev, [name]: value }));
-        } else {
-            setEnroll((prev) => ({ ...prev, [name]: value }));
         }
+    }, [campgroundId]);
+
+    const handleInputChange = (event) => {
+        const { name, value } = event.target;
+        setCampingInfo({
+          ...campingInfo,
+          [name]: value
+        });
+      };
+
+    const fetchData = () => {
+        fetch(`http://localhost:8080/main/campingDetail/${campgroundId}`)
+          .then((response) => {
+              if (!response.ok) {
+              }else{
+                  return response.json();
+              }
+
+          })
+          .then((data) => {
+            setCampingInfo(data);
+              console.log("히히")
+          })
+          .catch((error) => {
+            console.log(error)
+          });
+      };
+
+
+    //캠핑장 사이트 데이터를 가져오는 함수
+    const fetchSites = () => {
+        fetch(`http://localhost:8080/main/campingDetail/${campgroundId}/campsite`)
+            .then((response) => response.json())
+            .then((data) => {
+                setCampsiteInfo(data);
+            })
+            .catch((err) => {
+                console.log("An error occured: ", err);
+            });
+    };
+    //캠핑장 타입 가져오는 함수
+    const fetchType = () => {
+        fetch(`http://localhost:8080/main/campingDetail/${campgroundId}/type`)
+            .then((response) => response.json())
+            .then((data) => {
+                setCampType(data);
+            })
+            .catch((err) => {
+                console.log("An error occured: ", err);
+            });
     };
 
-    const handlePhotoChange = (e, siteNumber) => {
-        const file = e.target.files[0];
-        if (siteNumber) {
-            setCampsite((prev) => ({ ...prev, [`site_photo${siteNumber}`]: file }));
-        } else {
-            setEnroll((prev) => ({ ...prev, main_photo: file }));
-        }
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const updateCampsiteInfo = async () => {
         try {
             const formData = new FormData();
-            for (const key in enroll) {
-                formData.append(key, enroll[key]);
+            for (const key in campingInfo) {
+                formData.append(key, campingInfo[key]);
             }
+            console.log(campingInfo)
 
-            const response1 = await axios.post(REQUEST.ENROLL, formData, {
+            const response = await axios.put(`${baseURL}/updateCampground/${campgroundId}/update`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
             });
 
-            if (response1.data.success) {
-                try {
-                    console.log(response1.data);
-                    const response2 = await axios.post(REQUEST.ENROLLTYPE, {
-                        campgroundType: enroll.campgroundType,
-                        id: response1.data.id
-                    });
-                    console.log('Enroll2 response:', response2.data); // 응답 데이터 출력
-                    if (response2.data.success) {
-                        // 사이트 등록
-                        const sitePromises = [1, 2, 3, 4].map(siteNumber => {
-                            const siteFormData = new FormData();
-                            siteFormData.append('campId', response1.data.id);
-                            siteFormData.append('name', campsite[`site_name${siteNumber}`]);
-                            siteFormData.append('rate', campsite[`site_rate${siteNumber}`]);
-                            siteFormData.append('capacity', campsite[`site_capacity${siteNumber}`]);
-                            siteFormData.append('photo', campsite[`site_photo${siteNumber}`]);
-
-                            return axios.post(REQUEST.SITE, siteFormData, {
-                                headers: {
-                                    'Content-Type': 'multipart/form-data'
-                                }
-                            });
-                        });
-
-                        Promise.all(sitePromises)
-                            .then(results => {
-                                results.forEach((result, index) => {
-                                    if (result.data.success) {
-                                        console.log(`사이트${index + 1} 등록 성공`);
-                                    }
-                                });
-                            })
-                            .catch(error => {
-                                console.error('사이트 등록 실패', error);
-                            });
-                        navigator('/main');
-                    }
-                } catch (e) {
-                    console.error(e);
-                    alert('타입등록 실패.');
-                }
+            if (response.status === 200) {
+                alert('캠핑장 정보가 성공적으로 업데이트되었습니다.');
+                navigator(-1)
+            } else {
+                throw new Error('Network response was not ok');
             }
-        } catch (e) {
-            console.error(e);
-            alert('정보등록 실패.');
+        } catch (error) {
+            console.error('Error updating campsite info:', error);
         }
     };
+
+    const handlePhotoChange = (e, siteNumber) => {
+        const file = e.target.files[0];
+        console.log(campingInfo)
+        if (siteNumber) {
+            setCampsite((prev) => ({ ...prev, [`site_photo${siteNumber}`]: file }));
+        } else {
+            setCampingInfo((prev) => ({ ...prev, main_photo: file }));
+        }
+    };
+
+
+    //=======================================================
+
+    const navigator = useNavigate();
+    //=======================================================
+    //캠핑장 정보
+    const [enroll, setEnroll] = useState({
+        //캠핑장정보
+        userId: localStorage.getItem("user_id"),
+        campgroundType: campType, //타입
+        name: campingInfo.name,
+        description: campingInfo.description,
+        address: campingInfo.address,
+        contact: campingInfo.contact,
+        check_in_time: campingInfo.check_in_time,
+        check_out_time: campingInfo.check_out_time,
+        manner_start_time: campingInfo.manner_start_time,
+        manner_end_time: campingInfo.manner_end_time,
+        main_photo: campingInfo.main_photo,
+        amenities: campingInfo.amenities,
+    })
+
+    siteList.push({name:"", rate:"", capacity:"", photo:null});
+    siteList.push({name:"", rate:"", capacity:"", photo:null});
+    siteList.push({name:"", rate:"", capacity:"", photo:null});
+    siteList.push({name:"", rate:"", capacity:"", photo:null});
+
+    // 사이트 정보
+    const [campsite, setCampsite] = useState({
+        site_name1: siteList[0].name,
+        site_rate1: siteList[0].rate,
+        site_capacity1: siteList[0].capacity,
+        site_photo1: siteList[0].photo,
+
+        site_name2: siteList[1].name,
+        site_rate2: siteList[1].rate,
+        site_capacity2: siteList[1].capacity,
+        site_photo2: siteList[1].photo,
+
+        site_name3: siteList[2].name,
+        site_rate3: siteList[2].rate,
+        site_capacity3: siteList[2].capacity,
+        site_photo3: siteList[2].photo,
+
+        site_name4: siteList[3].name,
+        site_rate4: siteList[3].rate,
+        site_capacity4: siteList[3].capacity,
+        site_photo4: siteList[3].photo,
+    })
+
+
+    const handleChange = (e) => {
+        e.preventDefault();
+        setCampingInfo({...campingInfo, [e.target.name]: e.target.value})
+        setCampsite({...campsite, [e.target.name]: e.target.value})
+    }
+
+    const handleSubmit = (event) => {
+        event.preventDefault();
+        if (campgroundId) {
+          updateCampsiteInfo();
+        } else {
+          console.error('campgroundId is null or undefined');
+        }
+    };
+    //=======================================================
 
     return (
         <form className="enrollForm" onSubmit={handleSubmit}>
             <div className="enrollContent">
                 <div className="header">
-                    캠핑장 관리
+                    캠핑장 수정
                 </div>
 
                 <div className="photoContent">
                     <div className="Photo">
+                        <img src={campingInfo.main_photo} alt=""/>
                         <input
                             type="file"
                             accept="image/*"
@@ -149,84 +202,85 @@ const EnrollCamp = () => {
                         <label> 캠핑장 종류 :
                             <select
                                 name="campgroundType"
-                                value={enroll.campgroundType}
+                                value={campingInfo.campgroundType}
                                 onChange={handleChange}
                             >
-                                <option value="">캠핑장 종류를 선택하세요</option>
                                 <option value="캠핑">캠핑</option>
                                 <option value="글램핑">글램핑</option>
                                 <option value="카라반">카라반</option>
-                                <option value="캠핑, 글램핑">캠핑, 글램핑</option>
-                                <option value="캠핑, 카라반">캠핑, 카라반</option>
-                                <option value="글램핑, 카라반">글램핑, 카라반</option>
-                                <option value="캠핑, 글램핑, 카라반">캠핑, 글램핑, 카라반</option>
+                                <option value="카라반">캠핑, 글램핑</option>
+                                <option value="카라반">캠핑, 카라반</option>
+                                <option value="카라반">글램핑, 카라반</option>
+                                <option value="카라반">캠핑, 글램핑, 카라반</option>
                             </select>
                         </label>
                         <label> 이름 :
                             <input type="text" name="name"
-                                   value={enroll.name}
-                                   onChange={handleChange}
+                                   value={campingInfo.name}
+                                   onChange={handleInputChange}
                             />
                         </label>
                         <label> 숙소소개 :
                             <input type="text" name="description"
-                                   value={enroll.description}
-                                   onChange={handleChange}
+                                   value={campingInfo.description}
+                                   onChange={handleInputChange}
                             />
                         </label>
                         <label> 주소 :
                             <input type="text" name="address"
-                                   value={enroll.address}
-                                   onChange={handleChange}
+                                   value={campingInfo.address}
+                                   onChange={handleInputChange}
                             />
                         </label>
                         <label> 연락처 :
                             <input type="text" name="contact"
-                                   value={enroll.contact}
-                                   onChange={handleChange}
+                                   value={campingInfo.contact}
+                                   onChange={handleInputChange}
                             />
                         </label>
                         <div className="checkInOut">
                             <label> 체크인 시간 :
                                 <input type="time" name="check_in_time"
-                                       value={enroll.check_in_time}
-                                       onChange={handleChange}
+                                       value={campingInfo.check_in_time}
+                                       onChange={handleInputChange}
                                 />
                             </label>
                             <label> 체크아웃 시간 :
                                 <input type="time" name="check_out_time"
-                                       value={enroll.check_out_time}
-                                       onChange={handleChange}
+                                       value={campingInfo.check_out_time}
+                                       onChange={handleInputChange}
                                 />
                             </label>
                         </div>
                         <div className="checkInOut">
                             <label> 매너타임 시작 시간 :
                                 <input type="time" name="manner_start_time"
-                                       value={enroll.manner_start_time}
-                                       onChange={handleChange}
+                                       value={campingInfo.manner_start_time}
+                                       onChange={handleInputChange}
                                 />
                             </label>
                             <label> 매너타임 종료 시간 :
                                 <input type="time" name="manner_end_time"
-                                       value={enroll.manner_end_time}
-                                       onChange={handleChange}
+                                       value={campingInfo.manner_end_time}
+                                       onChange={handleInputChange}
                                 />
                             </label>
                         </div>
                         <label> 부대시설 :
                             <input type="text" name="amenities"
-                                   value={enroll.amenities}
-                                   onChange={handleChange}
+                                   value={campingInfo.amenities}
+                                   onChange={handleInputChange}
                             />
                         </label>
                     </div>
                 </div>
 
+
                 <div className="siteUpdate">
                     <div className="siteUpdate1">
                         <div className="sitePhoto">
                             <div>첫번째</div>
+                            <img src={campsite.site_photo1} alt=""/>
                             <input
                                 type="file"
                                 name="site_photo1"
@@ -257,6 +311,7 @@ const EnrollCamp = () => {
                     <div className="siteUpdate2">
                         <div className="sitePhoto">
                             <div>두번째</div>
+                            <img src={campsite.site_photo2} alt=""/>
                             <input
                                 type="file"
                                 name="site_photo2"
@@ -287,6 +342,7 @@ const EnrollCamp = () => {
                     <div className="siteUpdate3">
                         <div className="sitePhoto">
                             <div>세번째</div>
+                            <img src={campsite.site_photo3} alt=""/>
                             <input
                                 type="file"
                                 name="site_photo3"
@@ -316,7 +372,8 @@ const EnrollCamp = () => {
 
                     <div className="siteUpdate4">
                         <div className="sitePhoto">
-                            <div>네번째</div>
+                            <div> 네번째</div>
+                            <img src={campsite.site_photo4} alt=""/>
                             <input
                                 type="file"
                                 name="site_photo4"
@@ -343,14 +400,15 @@ const EnrollCamp = () => {
                             />
                         </label>
                     </div>
+
                 </div>
 
             </div>
             <div className="button">
-                <button type="submit">등록</button>
+                <button type="submit">수정</button>
             </div>
         </form>
     );
 };
 
-export default EnrollCamp;
+export default ModifyCamp;

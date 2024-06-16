@@ -27,10 +27,9 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname));
+    cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
   }
 });
-
 const upload = multer({ storage: storage });
 
 // 미들웨어 설정
@@ -86,21 +85,12 @@ app.get('/main/campingDetail/:campgroundId/main_photo', (req, res) => {
     if (error) {
       console.error("이미지 조회 실패", error);
       res.status(500).send("서버 오류: 이미지 조회 실패");
+    } else if (results.length === 0 || !results[0].main_photo) {
+      // 이미지가 없는 경우 기본 응답을 반환
+      res.json(null); // 또는 원하는 기본 이미지 URL을 반환할 수 있습니다.
     } else {
-      res.json(`http://localhost:8080/${uploadFolder}/${path.basename(results[0].main_photo)}`); // main_photo가 한 개만 있을 것으로 가정
-    }
-  });
-});
-
-// 시설정보 조회
-app.get('/main/campingDetail/:campgroundId/amenities', (req, res) => {
-  const { campgroundId } = req.params;
-  const sql = 'SELECT * FROM amenities WHERE campground_id = ?';
-  db.query(sql, [campgroundId], (error, result) => {
-    if (error) {
-      res.status(500).send("서버 오류: 시설정보 조회 실패");
-    } else {
-      res.json(result);
+      const mainPhotoPath = results[0].main_photo;
+      res.json(`http://localhost:8080/${uploadFolder}/${path.basename(mainPhotoPath)}`);
     }
   });
 });
@@ -128,7 +118,7 @@ app.get('/main/campingDetail/:campgroundId/reviews', (req, res) => {
 app.get('/main/campingDetail/:campgroundId/campsite', (req, res) => {
   const { campgroundId } = req.params;
   console.log(campgroundId)
-  const sql = 'SELECT * FROM campsites WHERE campground_id = ?';
+  const sql = 'SELECT c.campsite_id, c.campground_id, c.name, c.rate, c.capacity, c.photo, r.status FROM campsites c LEFT JOIN reservations r ON c.campsite_id = r.campsite_id AND CURDATE() BETWEEN r.check_in_date AND r.check_out_date WHERE c.campground_id = ?';
   db.query(sql, [campgroundId], (error, result) => {
     if (error) {
       console.error('캠프 사이트 조회 실패', error);
@@ -159,8 +149,10 @@ app.get('/main/campingDetail/:campgroundId/reserve', (req, res) => {
 });
 
 // 캠핑장 예약 정보를 저장하는 API
-app.post('/main/campingDetail/:campgroundId/reserve', (req, res) => {
-  const { campsite_id, checkInDate, checkOutDate, adults, children, status, campgroundId } = req.body;
+app.post('/main/campingDetail/:campgroundId/reserve/:user_id', (req, res) => {
+  const { campsite_id, checkInDate, checkOutDate, adults, children, status } = req.body;
+  const {campgroundId, user_id} = req.params;
+
 
 
   // 날짜 겹침 확인 쿼리
@@ -179,8 +171,8 @@ app.post('/main/campingDetail/:campgroundId/reserve', (req, res) => {
     } else if (result.length > 0) {
       res.status(400).json({ message: "해당 날짜는 이미 예약되었습니다." });
     } else {
-      const sqlQuery = 'INSERT INTO reservations (campsite_id, check_in_date, check_out_date, adults, children, status, campground_id) VALUES (?, ?, ?, ?, ?, ?, ?)';
-      db.query(sqlQuery, [campsite_id, checkInDate, checkOutDate, adults, children, status, campgroundId], (err, result) => {
+      const sqlQuery = 'INSERT INTO reservations (campsite_id, user_id, check_in_date, check_out_date, adults, children, status, campground_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+      db.query(sqlQuery, [campsite_id,user_id, checkInDate, checkOutDate, adults, children, status, campgroundId], (err, result) => {
         if (err) {
           res.status(500).send(err);
           console.error('Database query error:', err);
@@ -281,7 +273,7 @@ app.post('/filter', (req, res) => {
 
 // 캠핑장 등록 API
 app.post('/enroll', upload.single('main_photo'), (req, res) => {
-  const { userId, name, description, address, contact, check_in_time, check_out_time, manner_start_time, manner_end_time, amenities} = req.body;
+  const { userId, name, description, address, contact, check_in_time, check_out_time, manner_start_time, manner_end_time, amenities } = req.body;
   const main_photo = req.file ? `${req.file.filename}` : null; // 수정된 이미지 파일 이름 사용
 
   const query = 'INSERT INTO campgrounds (user_id, name, address, contact, description, check_in_time, check_out_time, manner_start_time, manner_end_time, main_photo, amenities) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
@@ -293,6 +285,44 @@ app.post('/enroll', upload.single('main_photo'), (req, res) => {
     const insertId = results.insertId;
     res.json({ success: true, id: insertId });
   });
+});
+
+// 캠핑장 업데이트
+app.put('/updateCampground/:campgroundId/update', upload.single('main_photo'), (req, res) => {
+  const campgroundId = req.params.campgroundId;
+  const { user_id, name, description, address, contact, check_in_time, check_out_time, manner_start_time, manner_end_time, amenities } = req.body;
+  const main_photo = req.file ? `${req.file.filename}` : null;
+  console.log(req.body, main_photo);
+
+  const updateQuery = `
+    UPDATE campgrounds
+    SET
+      user_id = ?,
+      name = ?,
+      address = ?,
+      contact = ?,
+      description = ?,
+      check_in_time = ?,
+      check_out_time = ?,
+      manner_start_time = ?,
+      manner_end_time = ?,
+      main_photo = ?,
+      amenities = ?
+    WHERE campground_id = ?
+  `;
+
+  db.query(
+      updateQuery,
+      [user_id, name, address, contact, description, check_in_time, check_out_time, manner_start_time, manner_end_time, main_photo, amenities, campgroundId],
+      (error, results) => {
+        if (error) {
+          console.error('Error updating campground:', error);
+          return res.status(500).json({ error: '캠핑장 정보 업데이트 실패' });
+        }
+        console.log(`Campground with ID ${campgroundId} updated successfully.`);
+        res.json(results);
+      }
+  );
 });
 
 // 캠핑장타입 등록 API
@@ -311,6 +341,25 @@ app.post('/enrollType', (req, res) => {
     res.json({ success: true});
   });
 });
+
+// 캠핑장 타입 수정 API
+app.put('/editType', (req, res) => {
+  const { campgroundType, id } = req.body;
+
+  console.log('Received data:', req.body); // req.body 출력
+
+  const query = 'UPDATE campgroundtype SET type = ? WHERE campground_id = ?';
+
+  db.query(query, [campgroundType, id], (error, results) => {
+    if (error) {
+      console.error('캠핑장타입 수정 실패:', error);
+      return res.status(500).json({ error: '캠핑장타입 수정 실패' });
+    }
+    res.json({ success: true });
+  });
+});
+
+
 
 // 사이트 등록 API
 app.post('/site', upload.single('photo'), (req, res) => {
@@ -362,10 +411,10 @@ app.get('/MyPage/reviews', (req, res) => {
 });
 
 // 예약정보 데이터 조회
-app.get('/MyPage/reservations', (req, res) => {
-
-  const query = 'SELECT reservation_id, campsite_id, user_id, adults, children, check_in_date, check_out_date, status  FROM reservations';
-  db.query(query, (error, result) => {
+app.get('/MyPage/reservations/:user_id', (req, res) => {
+  const {user_id} = req.params
+  const query = 'SELECT *  FROM reservations WHERE user_id = ?';
+  db.query(query, [user_id], (error, result) => {
 
     if (error) {
       console.error('리뷰 데이터 조회 실패', error);
@@ -395,6 +444,46 @@ app.get('/MyPage/reservation', (req, res) => {
       return;
     }
     res.json(results);
+  });
+});
+
+app.get('/reservCamp', (req, res) => {
+  const { user_id } = req.query; // GET 요청에서 req.query 사용
+
+  const sql = `SELECT r.user_id, u.name AS user_name, cg.campground_id, cg.name AS campground_name, cs.campsite_id, cs.name AS campsite_name, r.reservation_id, r.check_in_date, r.check_out_date, r.status, r.adults, r.children FROM users u JOIN campgrounds cg ON u.user_id = cg.user_id JOIN campsites cs ON cg.campground_id = cs.campground_id JOIN reservations r ON cs.campsite_id = r.campsite_id WHERE u.user_id = ?`;
+
+  db.query(sql, [user_id], (error, result) => {
+    if (error) {
+      console.error('내 캠핑장의 예약 현황 조회 실패:', error);
+      res.status(500).send('내 캠핑장 예약 현황 조회 실패');
+      return;
+    }
+    res.json(result);
+  });
+});
+
+app.post('/acceptReserv', (req, res) => {
+  const { reservation_id, campsite_id } = req.body;
+
+  const query = `
+    UPDATE reservations
+    SET status = 'Confirmed'
+    WHERE reservation_id = ? AND campsite_id = ?;
+  `;
+
+  db.query(query, [reservation_id, campsite_id], (err, result) => {
+    if (err) {
+      console.error('Error updating reservation status:', err);
+      res.status(500).send('Internal Server Error');
+      return;
+    }
+
+    if (result.affectedRows === 0) {
+      res.status(404).send('Reservation not found');
+      return;
+    }
+
+    res.status(200).send('Reservation confirmed successfully');
   });
 });
 
