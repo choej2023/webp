@@ -3,8 +3,8 @@ import Login from './pages/main/Login';
 import {Route, Routes} from 'react-router-dom';
 import Main from "./pages/main/Main";
 import MyPage from "./pages/main/component/MyPage";
-import EnrollCamp from "./pages/enroll/EnrollCamp";
 import CampingDetail from "./pages/detail/CampingDetail"
+import EnrollCamp from "./pages/enroll/EnrollCamp";
 
 function App() {
     return (

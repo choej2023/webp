@@ -80,7 +80,7 @@ const MyPage = () => {
       {newReview.map((review, index) => (
   <div key={index}>
     <p>{review.text}</p>
-    <img src={require(`../../../uploads/${review.photo}`)} alt="Review" />
+    <img src={review.photo} alt="Review" />
   </div>
 ))}
     </div>
