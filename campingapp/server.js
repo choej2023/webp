@@ -341,6 +341,100 @@ app.get(`${uploadFolder}/:filename`, (req, res) => {
   });
 });
 
+
+// 리뷰 데이터 조회
+app.get('/MyPage/reviews', (req, res) => {
+
+  const query = 'SELECT text, photo FROM reviews';
+  db.query(query, (error, result) => {
+
+    if (error) {
+      console.error('리뷰 데이터 조회 실패', error);
+      res.status(500).send('서버 오류: 리뷰 데이터 조회 실패');
+    } else {
+      const response = result.map(review => ({
+        ...review,
+        photo: review.photo ? `http://localhost:8080/${uploadFolder}/${path.basename(review.photo)}` : null
+      }));
+      res.status(200).json(response);
+    }
+  });
+});
+
+// 예약정보 데이터 조회
+app.get('/MyPage/reservations', (req, res) => {
+
+  const query = 'SELECT reservation_id, campsite_id, user_id, adults, children, check_in_date, check_out_date, status  FROM reservations';
+  db.query(query, (error, result) => {
+
+    if (error) {
+      console.error('리뷰 데이터 조회 실패', error);
+      res.status(500).send('서버 오류: 리뷰 데이터 조회 실패');
+    } else {
+      res.status(200).json(result)
+    }
+  });
+});
+
+
+
+// 고객의 예약 현황 조회
+app.get('/MyPage/reservation', (req, res) => {
+  const userId = req.query.user_id;
+  const sql = `
+    SELECT r.reservation_id, c.name AS campground_name, cs.name AS campsite_name, r.check_in_date, r.check_out_date, r.status
+    FROM reservations r
+    JOIN campsites cs ON r.campsite_id = cs.campsite_id
+    JOIN campgrounds c ON r.campground_id = c.campground_id
+    WHERE r.user_id = ?;
+  `;
+  db.query(sql, [userId], (error, results) => {
+    if (error) {
+      console.error('예약 현황 조회 실패:', error);
+      res.status(500).send('예약 현황 조회 실패');
+      return;
+    }
+    res.json(results);
+  });
+});
+
+
+
+// 고객의 리뷰 조회
+app.get('/api/reviews', (req, res) => {
+  const userId = req.query.user_id;
+  const sql = 'SELECT review_id, text, photo FROM reviews WHERE user_id = ?';
+  db.query(sql, [userId], (error, results) => {
+    if (error) {
+      console.error('리뷰 조회 실패:', error);
+      res.status(500).send('리뷰 조회 실패');
+      return;
+    }
+    const response = results.map(review => ({
+      ...review,
+      photo: review.photo ? `http://localhost:8080/${uploadFolder}/${path.basename(review.photo)}` : null
+    }));
+    res.status(200).send(response);
+  });
+});
+
+
+// 캠핑장 예약 취소 API
+app.delete('/main/MyPage/cancel/:campsite_id/:reservation_id', (req, res) => {
+  const { campsite_id, reservation_id } = req.params;
+  const sql = 'DELETE FROM reservations WHERE campsite_id = ? AND reservation_id = ?';
+  db.query(sql, [campsite_id, reservation_id], (error, result) => {
+    if (error) {
+      console.error('예약 취소 실패:', error);
+      res.status(500).send('서버 오류: 예약 취소 실패');
+      return;
+    }
+    res.json({ success: true, message: '예약이 성공적으로 취소되었습니다.' });
+  });
+});
+
+
+
 // 서버 실행
 app.listen(port, () => {
   console.log(`서버가 포트 ${port}에서 실행 중입니다.`);
