@@ -6,6 +6,7 @@ import "./css/campingDetail.css";
 import { useParams } from "react-router-dom";
 
 const CampingDetail = () => {
+
   const settings = {
     dots: false,
     infinite: false,
@@ -259,7 +260,7 @@ const CampingDetail = () => {
           <Slider {...settings}>
             {mainPhoto && (
               <div key={mainPhoto}>
-                <img src={require(`../../../uploads/${mainPhoto}`)} alt="Main" />
+                <img src={mainPhoto} alt="Main" className="image"/>
               </div>
             )}
           </Slider>
