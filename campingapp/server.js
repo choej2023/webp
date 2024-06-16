@@ -331,6 +331,7 @@ app.post('/site', upload.single('photo'), (req, res) => {
 });
 
 
+
 // 이미지 파일 제공
 app.get(`${uploadFolder}/:filename`, (req, res) => {
   const filename = req.params.filename;

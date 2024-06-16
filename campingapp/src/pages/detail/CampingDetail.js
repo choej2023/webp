@@ -2,10 +2,14 @@ import React, {useEffect, useState} from "react";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-import "./css/campingDetail.css";
-import { useParams } from "react-router-dom";
+import './css/campingDetail.css';
+import {useLocation, useNavigate, useParams} from "react-router-dom";
 
 const CampingDetail = () => {
+
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { item } = location.state || {}
 
   const settings = {
     dots: false,
@@ -107,12 +111,12 @@ const CampingDetail = () => {
       .then((response) => response.json())
       .then((data) => {
         setSiteList(data);
+        
       })
       .catch((err) => {
         console.log("An error occured: ", err);
       });
   };
-
   //캠핑장 예약 정보를 가져오는 함수
   const fetchReservation = () => {
     fetch(`http://localhost:8080/main/campingDetail/${campgroundId}/reserve`)
@@ -160,10 +164,9 @@ const CampingDetail = () => {
       body: JSON.stringify(reservationData),
     })
       .then((response) => response.json()) // JSON 응답을 파싱합니다.
-
       .then((data) => {
         console.log("Response from server:", data);
-
+        console.log(status);
         if (data.success) {
           alert("예약이 완료되었습니다.");
           setcampsite_id("");
@@ -172,6 +175,7 @@ const CampingDetail = () => {
           setAdults("");
           setChildren("");
           window.location.reload();
+          
         } else {
           alert("해당 날짜는 예약되었습니다.");
         }
@@ -263,12 +267,13 @@ const CampingDetail = () => {
                 <img src={mainPhoto} alt="Main" className="image"/>
               </div>
             )}
+
+            {/* 추가 이미지를 원하시면 위의 형식을 따라 추가하십시오. */}
           </Slider>
         </div>
         <div className="reservation">
-        <button>수정</button>
+          <button onClick={()  => navigate('/ModifyCamp', {state: {campgroundId: campgroundId, campingInfo: campingInfo, type: item.types}})}>수정</button>
           <h2>캠핑장 예약</h2>
-          
           <input
             type="text"
             placeholder="사이트 이름"
@@ -287,7 +292,6 @@ const CampingDetail = () => {
             value={checkOutDate}
             onChange={(e) => setCheckOutDate(e.target.value)}
           />
-
           <input
             type="number"
             placeholder="성인 수"
@@ -301,10 +305,14 @@ const CampingDetail = () => {
             onChange={(e) => setChildren(e.target.value)}
           />
 
+<button onClick={checkDate}>날짜 조회</button>
           <button onClick={handleReservation}>예약하기</button>
         </div>
         <div className="camping-info" id="camping-info">
           <h3>캠핑장 정보</h3>
+          <p>
+            <strong>타입: </strong> {item.types}
+          </p>
           <p>
             <strong>캠핑장:</strong> {campingInfo.name}
           </p>
@@ -349,7 +357,7 @@ const CampingDetail = () => {
               </p>
               <p>
                 <strong>상태: </strong> {site.status}
-                
+
               </p>
             </div>
           </div>
