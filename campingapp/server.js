@@ -43,8 +43,8 @@ app.use((req, res, next) => {
 // MySQL 연결 설정
 const db = mysql.createConnection({
   host: 'localhost',
-  user: 'root',
-  password: 'root',
+  user: 'camping',
+  password: '1234',
   database: 'camping_db'
 });
 
@@ -212,6 +212,8 @@ app.post('/login', (req, res) => {
     return res.status(200).send(result[0]);
   });
 });
+
+
 
 // 필터 API
 app.post('/filter', (req, res) => {
