@@ -11,7 +11,7 @@ const port = 8080; // 포트를 8080으로 설정
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(uploadFolder));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(bodyParser.json());
 app.use(cors());
 
@@ -27,8 +27,7 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
-    const filename = file.originalname.split('\\').pop()
-    cb(null, filename);
+    cb(null, Date.now() + path.extname(file.originalname));
   }
 });
 
@@ -71,7 +70,11 @@ app.get('/main/campingDetail/:campgroundId', (req, res) => {
       return;
     }
     // 결과를 화면에 출력
-    res.json(results[0]);
+    const response = results.map(campground => ({
+      ...campground,
+      main_photo: campground.main_photo ? `http://localhost:8080/${uploadFolder}/${path.basename(campground.main_photo)}` : null
+    }));
+    res.status(200).json(response[0])
   });
 });
 
@@ -84,7 +87,7 @@ app.get('/main/campingDetail/:campgroundId/main_photo', (req, res) => {
       console.error("이미지 조회 실패", error);
       res.status(500).send("서버 오류: 이미지 조회 실패");
     } else {
-      res.json(results[0]); // main_photo가 한 개만 있을 것으로 가정
+      res.json(`http://localhost:8080/${uploadFolder}/${path.basename(results[0].main_photo)}`); // main_photo가 한 개만 있을 것으로 가정
     }
   });
 });
@@ -112,7 +115,11 @@ app.get('/main/campingDetail/:campgroundId/reviews', (req, res) => {
       console.error('리뷰 데이터 조회 실패', error);
       res.status(500).send('서버 오류: 리뷰 데이터 조회 실패');
     } else {
-      res.json(result);
+      const response = result.map(reviews => ({
+        ...reviews,
+        photo: reviews.photo ? `http://localhost:8080/${uploadFolder}/${path.basename(reviews.photo)}` : null
+      }));
+      res.json(response);
     }
   });
 });
@@ -127,7 +134,11 @@ app.get('/main/campingDetail/:campgroundId/campsite', (req, res) => {
       console.error('캠프 사이트 조회 실패', error);
       res.status(500).send('서버 오류: 캠프 사이트 조회 실패');
     } else {
-      res.json(result);
+      const response = result.map(sites => ({
+        ...sites,
+        photo: sites.photo ? `http://localhost:8080/${uploadFolder}/${path.basename(sites.photo)}` : null
+      }));
+      res.json(response);
     }
   });
 });
@@ -150,6 +161,7 @@ app.get('/main/campingDetail/:campgroundId/reserve', (req, res) => {
 // 캠핑장 예약 정보를 저장하는 API
 app.post('/main/campingDetail/:campgroundId/reserve', (req, res) => {
   const { campsite_id, checkInDate, checkOutDate, adults, children, status, campgroundId } = req.body;
+
 
   // 날짜 겹침 확인 쿼리
   const overlapQuery = `
@@ -198,7 +210,7 @@ app.post('/main/campingDetail/:campgroundId/reviews', upload.single('photo'), (r
   });
 });
 
-// 로그인 API
+// 로그인3 API
 app.post('/login', (req, res) => {
   const { id, pw } = req.body;
   const query = `SELECT user_id FROM users WHERE name = ? AND password = ?`;
@@ -260,14 +272,16 @@ app.post('/filter', (req, res) => {
     }
 
     // 이미지 URL을 포함한 응답 데이터 생성
-    const response = results
-
+    const response = results.map(campground => ({
+      ...campground,
+      main_photo: campground.main_photo ? `http://localhost:8080/${uploadFolder}/${path.basename(campground.main_photo)}` : null
+    }));
     return res.status(200).send(response);
   });
 });
 
 // 이미지 파일 제공
-app.get(`/:filename`, (req, res) => {
+app.get(`${uploadFolder}/:filename`, (req, res) => {
   const filename = req.params.filename;
   const filePath = path.join(__dirname, uploadFolder, filename);
   console.log("hello", filePath, filename)

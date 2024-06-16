@@ -4,6 +4,7 @@
   box-sizing: border-box;
   
 }
+
 .container{
   
   height: 700px;
@@ -11,7 +12,7 @@
 
 .carousel-container{
 
-  width: 1000px;
+  width: 50%;
   height: 300px;
 }
 .carousel-container img{
@@ -19,6 +20,7 @@
   width: 100%;
   height: 100%;
 }
+
 .reservation{
   float:right;
   margin-top: -250px;

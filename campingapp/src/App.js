@@ -13,7 +13,6 @@ function App() {
             <Route path='/' element={<Login/>}></Route>
             <Route path='/main' element={<Main/>}></Route>
             <Route path='/myPage' element={<MyPage/>}></Route>
-            <Route path='/enrollCampground' element={<EnrollCamp/>}></Route>
             <Route path='/campgroundDetail' element={<CampgroundDetail/>}></Route>
 
             {/*위에서 아래로*/}
