@@ -1,11 +1,15 @@
 import "./EnrollCamp.css";
 import React, { useState } from "react";
 import axios from 'axios';
-import { useNavigate } from "react-router-dom";
+import {useLocation, useNavigate} from "react-router-dom";
 import { REQUEST } from "../../config";
 
 const EnrollCamp = () => {
     const navigator = useNavigate();
+
+    const location = useLocation()
+    const {campgroundId, campingInfo} = location.state || {}
+
     const [enroll, setEnroll] = useState({
         userId: localStorage.getItem("user_id"),
         campgroundType: "",

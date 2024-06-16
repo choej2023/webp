@@ -1,0 +1,24 @@
+.MyPage-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  .reservation-list {
+    margin-top: 20px;
+  }
+  
+  .reservation-item {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-bottom: 10px;
+  }
+  
+  .reservation-item p {
+    margin: 5px 0;
+  }
+  
+  h2 {
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+  }
