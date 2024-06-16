@@ -268,11 +268,11 @@ app.post('/filter', (req, res) => {
 
 // 캠핑장 등록 API
 app.post('/enroll', (req, res) => {
-  const { userId, name, description, address, contact, check_in_time, check_out_time, manner_start_time, manner_end_time, main_photo} = req.body;
+  const { userId, name, description, address, contact, check_in_time, check_out_time, manner_start_time, manner_end_time, main_photo, amenities} = req.body;
 
-  const query = 'INSERT INTO campgrounds (user_id, name, address, contact, description, check_in_time, check_out_time, manner_start_time, manner_end_time, main_photo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+  const query = 'INSERT INTO campgrounds (user_id, name, address, contact, description, check_in_time, check_out_time, manner_start_time, manner_end_time, main_photo, amenities) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
-  db.query(query, [userId, name, address, contact, description, check_in_time, check_out_time, manner_start_time, manner_end_time, main_photo], (error, results) => {
+  db.query(query, [userId, name, address, contact, description, check_in_time, check_out_time, manner_start_time, manner_end_time, main_photo, amenities], (error, results) => {
     if (error) {
       return res.status(500).json({ error: '캠핑장정보 등록 실패' });
     }
@@ -285,14 +285,27 @@ app.post('/enroll', (req, res) => {
 app.post('/enrollType', (req, res) => {
   const { campgroundType, id } = req.body;
 
-  console.log('Received data:', req.body); // req.body 출력
-
   const query = 'INSERT INTO campgroundtype (campground_id, type) VALUES (?, ?)';
 
   db.query(query, [id, campgroundType], (error, results) => {
     if (error) {
       console.error('캠핑장타입 등록 실패:', error);
       return res.status(500).json({ error: '캠핑장타입 등록 실패' });
+    }
+    res.json({ success: true});
+  });
+});
+
+// 사이트 등록 API
+app.post('/site', (req, res) => {
+  const { campId, name, rate, capacity, photo } = req.body;
+
+  const query = 'INSERT INTO campsites (campground_id, name, rate, capacity, photo) VALUES (?, ?, ?, ?, ?)';
+
+  db.query(query, [campId, name, rate, capacity, photo], (error, results) => {
+    if (error) {
+      console.error('사이트 등록 실패:', error);
+      return res.status(500).json({ error: '사이트 등록 실패' });
     }
     res.json({ success: true});
   });

@@ -7,9 +7,13 @@ import {REQUEST} from "../../config";
 
 const EnrollCamp = () => {
     const navigator = useNavigate();
+
+    //=======================================================
+    //캠핑장 정보
     const [enroll, setEnroll] = useState({
+        //캠핑장정보
         userId: localStorage.getItem("user_id"),
-        campgroundType: "",
+        campgroundType: "캠핑", //타입
         name: "",
         description: "",
         address: "",
@@ -18,23 +22,73 @@ const EnrollCamp = () => {
         check_out_time: "",
         manner_start_time: "",
         manner_end_time: "",
-        main_photo:"camping3.jpg"
+        main_photo: "camping3.jpg",
+        amenities: "",
+    })
+    //사이트정보
+    const [campsite, setCampsite] = useState({
+        site_name1: "",
+        site_rate1: "",
+        site_capacity1: "",
+        site_photo1: "reviewSample.jpg",
+
+        site_name2: "",
+        site_rate2: "",
+        site_capacity2: "",
+        site_photo2: "reviewSample.jpg",
+
+        site_name3: "",
+        site_rate3: "",
+        site_capacity3: "",
+        site_photo3: "reviewSample.jpg",
+
+        site_name4: "",
+        site_rate4: "",
+        site_capacity4: "",
+        site_photo4: "reviewSample.jpg",
     })
 
     const handleChange = (e) => {
         setEnroll({...enroll, [e.target.name]: e.target.value})
+        setCampsite({...campsite, [e.target.name]: e.target.value})
     }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            //캠핑장 정보 등록
             const response1 = await axios.post(REQUEST.ENROLL, enroll);
             if (response1.data.success) {
                 try {
-                    console.log(response1.data);
+                    //캠핑장 타이 등록
                     const response2 = await axios.post(REQUEST.ENROLLTYPE, { campgroundType: enroll.campgroundType, id: response1.data.id });
                     console.log('Enroll2 response:', response2.data); // 응답 데이터 출력
                     if (response2.data.success) {
+                        //사이트 등록
+                        try{
+                            const responseSite1 = await axios.post(REQUEST.SITE, { campId: response1.data.id, name: campsite.site_name1, rate: campsite.site_rate1, capacity: campsite.site_capacity1, photo: campsite.site_photo1});
+                            if(responseSite1.data.success) {console.log("사이트1 등록 성공")}
+                        } catch (e){
+                            console.error(e);
+                        }
+                        try{
+                            const responseSite2 = await axios.post(REQUEST.SITE, { campId: response1.data.id, name: campsite.site_name2, rate: campsite.site_rate2, capacity: campsite.site_capacity2, photo: campsite.site_photo2});
+                            if(responseSite2.data.success) {console.log("사이트2 등록 성공")}
+                        } catch (e){
+                            console.error(e);
+                        }
+                        try{
+                            const responseSite3 = await axios.post(REQUEST.SITE, { campId: response1.data.id, name: campsite.site_name3, rate: campsite.site_rate3, capacity: campsite.site_capacity3, photo: campsite.site_photo3});
+                            if(responseSite3.data.success) {console.log("사이트3 등록 성공")}
+                        } catch (e){
+                            console.error(e);
+                        }
+                        try{
+                            const responseSite4 = await axios.post(REQUEST.SITE, { campId: response1.data.id, name: campsite.site_name4, rate: campsite.site_rate4, capacity: campsite.site_capacity4, photo: campsite.site_photo4});
+                            if(responseSite4.data.success) {console.log("사이트4 등록 성공")}
+                        } catch (e){
+                            console.error(e);
+                        }
                         navigator('/main');
                     }
                 } catch (e) {
@@ -47,7 +101,7 @@ const EnrollCamp = () => {
             alert('정보등록 실패.');
         }
     }
-
+    //=======================================================
 
   return (
     <form className="enrollForm" onSubmit={handleSubmit}>
@@ -58,7 +112,7 @@ const EnrollCamp = () => {
 
       <div className="photoContent">
         <div className="Photo">
-          사진
+          캠핑장 사진 등록
         </div>
 
         <div className="info">
@@ -130,18 +184,118 @@ const EnrollCamp = () => {
             />
           </label>
           </div>
+          <label> 부대시설 :
+            <input type="text" name="emenities" 
+            value={enroll.emenities} 
+            onChange={handleChange}
+            />
+          </label>
         </div>
       </div>
 
 
       <div className="siteUpdate">
-        사이트 등록창
+        <div className="siteUpdate1">
+            <div className="sitePhoto">
+                <div>첫번째</div>
+                사이트 사진 등록하기
+            </div>
+          <label> 사이트 이름 :
+            <input type="text" name="site_name1" 
+            value={campsite.site_name1} 
+            onChange={handleChange}
+            />
+          </label>
+          <label> 사이트 요금 :
+            <input type="text" name="site_rate1" 
+            value={campsite.site_rate1} 
+            onChange={handleChange}
+            />
+          </label>
+          <label> 사이트 수용인원 :
+            <input type="number" name="site_capacity1" 
+            value={campsite.site_capacity1} 
+            onChange={handleChange}
+            />
+          </label>
+        </div>
+
+        <div className="siteUpdate2">
+        <div className="sitePhoto"> 
+        <div>두번째</div>
+                사이트 사진 등록하기
+            </div>
+          <label> 사이트 이름 :
+            <input type="text" name="site_name2" 
+            value={campsite.site_name2} 
+            onChange={handleChange}
+            />
+          </label>
+          <label> 사이트 요금 :
+            <input type="text" name="site_rate2" 
+            value={campsite.site_rate2} 
+            onChange={handleChange}
+            />
+          </label>
+          <label> 사이트 수용인원 :
+            <input type="number" name="site_capacity2" 
+            value={campsite.site_capacity2} 
+            onChange={handleChange}
+            />
+          </label>
+        </div>
+
+        <div className="siteUpdate3">
+        <div className="sitePhoto"> 
+        <div>세번째</div>
+                사이트 사진 등록하기
+            </div>
+          <label> 사이트 이름 :
+            <input type="text" name="site_name3" 
+            value={campsite.site_name3} 
+            onChange={handleChange}
+            />
+          </label>
+          <label> 사이트 요금 :
+            <input type="text" name="site_rate3" 
+            value={campsite.site_rate3} 
+            onChange={handleChange}
+            />
+          </label>
+          <label> 사이트 수용인원 :
+            <input type="number" name="site_capacity3" 
+            value={campsite.site_capacity3} 
+            onChange={handleChange}
+            />
+          </label>
+        </div>
+
+        <div className="siteUpdate4">
+        <div className="sitePhoto"> 
+        <div> 네번째</div>
+                사이트 사진 등록하기
+            </div>
+          <label> 사이트 이름 :
+            <input type="text" name="site_name4" 
+            value={campsite.site_name4} 
+            onChange={handleChange}
+            />
+          </label>
+          <label> 사이트 요금 :
+            <input type="text" name="site_rate4" 
+            value={campsite.site_rate4} 
+            onChange={handleChange}
+            />
+          </label>
+          <label> 사이트 수용인원 :
+            <input type="number" name="site_capacity4" 
+            value={campsite.site_capacity4} 
+            onChange={handleChange}
+            />
+          </label>
+        </div>
       </div>
 
-
-      <div className="siteModify">
-        사이트 수정/삭제창
-      </div>
     </div>
     <div className="button">
     <button type="submit">등록</button>

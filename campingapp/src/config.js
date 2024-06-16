@@ -5,4 +5,5 @@ export const REQUEST = {
     UPLOAD: `${baseURL}/upload`,
     ENROLL: `${baseURL}/enroll`,
     ENROLLTYPE: `${baseURL}/enrollType`,
+    SITE: `${baseURL}/site`,
 }
