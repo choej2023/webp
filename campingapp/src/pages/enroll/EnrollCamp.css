@@ -94,3 +94,8 @@
     align-self: center;
     border-radius: 10px;
 }
+
+.siteUpdate{
+  
+  border: 1px solid red;
+}

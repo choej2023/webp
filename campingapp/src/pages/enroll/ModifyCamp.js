@@ -6,22 +6,49 @@ import {REQUEST} from "../../config";
 
 
 
-const EnrollCamp = () => {
+const ModifyCamp = () => {
     //=======================================================
     // fetch data
     const location = useLocation()
-    const {campgroundId, campingInfo} = location.state || {}
-
+    const {campgroundId, setCampgroundId} = location.state || {}
+    const [campingInfo, setCampingInfo] = useState([]);
     const [campsiteInfo, setCampsiteInfo] = useState([]);
+    const [Error,setError] = useState("");
     const [campType, setCampType] = useState({});
-    const [lists, setLists] = useState([]);
-
+    
     useEffect(() => {
         if (campgroundId) {
             fetchSites();
             fetchType();
+            fetchData();
+            
         }
     }, [campgroundId]);
+    console.log(campgroundId)
+
+    const handleInputChange = (event) => {
+        const { name, value } = event.target;
+        setCampingInfo({
+          ...campingInfo,
+          [name]: value
+        });
+      };
+    const fetchData = () => {
+        fetch(`http://localhost:8080/main/campingDetail/${campgroundId}`)
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+          })
+          .then((data) => {
+            setCampingInfo(data);
+          })
+          .catch((error) => {
+            setError(error.message || "An error occurred");
+          });
+      };
+
 
     //캠핑장 사이트 데이터를 가져오는 함수
     const fetchSites = () => {
@@ -29,7 +56,6 @@ const EnrollCamp = () => {
             .then((response) => response.json())
             .then((data) => {
                 setCampsiteInfo(data);
-                setLists(data)
             })
             .catch((err) => {
                 console.log("An error occured: ", err);
@@ -46,6 +72,27 @@ const EnrollCamp = () => {
                 console.log("An error occured: ", err);
             });
     };
+
+    const updateCampsiteInfo = () => {
+        fetch(`http://localhost:8080/updateCampground/${campgroundId}/update`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(campingInfo),
+        })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Network response was not ok');
+            }
+            alert('캠핑장 정보가 성공적으로 업데이트되었습니다.');
+          })
+          .catch(error => {
+            console.error('Error updating campsite info:', error);
+          });
+      };
+
+
     //=======================================================
 
     const navigator = useNavigate();
@@ -67,6 +114,12 @@ const EnrollCamp = () => {
         amenities: campingInfo.amenities,
     })
 
+    const siteObjects = campsiteInfo.map((site, index) => {
+        return {
+            name: `site${index}`,
+            data: site
+        };
+    });
    
     //사이트정보
     const [campsite, setCampsite] = useState({
@@ -93,93 +146,19 @@ const EnrollCamp = () => {
 
 
     const handleChange = (e) => {
+        e.preventDefault();
         setEnroll({...enroll, [e.target.name]: e.target.value})
         setCampsite({...campsite, [e.target.name]: e.target.value})
     }
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            //캠핑장 정보 등록
-            const response1 = await axios.post(REQUEST.ENROLL, enroll);
-            if (response1.data.success) {
-                try {
-                    //캠핑장 타이 등록
-                    const response2 = await axios.post(REQUEST.ENROLLTYPE, {
-                        campgroundType: enroll.campgroundType,
-                        id: response1.data.id
-                    });
-                    console.log('Enroll2 response:', response2.data); // 응답 데이터 출력
-                    if (response2.data.success) {
-                        //사이트 등록
-                        try {
-                            const responseSite1 = await axios.post(REQUEST.SITE, {
-                                campId: response1.data.id,
-                                name: campsite.site_name1,
-                                rate: campsite.site_rate1,
-                                capacity: campsite.site_capacity1,
-                                photo: campsite.site_photo1
-                            });
-                            if (responseSite1.data.success) {
-                                console.log("사이트1 등록 성공")
-                            }
-                        } catch (e) {
-                            console.error(e);
-                        }
-                        try {
-                            const responseSite2 = await axios.post(REQUEST.SITE, {
-                                campId: response1.data.id,
-                                name: campsite.site_name2,
-                                rate: campsite.site_rate2,
-                                capacity: campsite.site_capacity2,
-                                photo: campsite.site_photo2
-                            });
-                            if (responseSite2.data.success) {
-                                console.log("사이트2 등록 성공")
-                            }
-                        } catch (e) {
-                            console.error(e);
-                        }
-                        try {
-                            const responseSite3 = await axios.post(REQUEST.SITE, {
-                                campId: response1.data.id,
-                                name: campsite.site_name3,
-                                rate: campsite.site_rate3,
-                                capacity: campsite.site_capacity3,
-                                photo: campsite.site_photo3
-                            });
-                            if (responseSite3.data.success) {
-                                console.log("사이트3 등록 성공")
-                            }
-                        } catch (e) {
-                            console.error(e);
-                        }
-                        try {
-                            const responseSite4 = await axios.post(REQUEST.SITE, {
-                                campId: response1.data.id,
-                                name: campsite.site_name4,
-                                rate: campsite.site_rate4,
-                                capacity: campsite.site_capacity4,
-                                photo: campsite.site_photo4
-                            });
-                            if (responseSite4.data.success) {
-                                console.log("사이트4 등록 성공")
-                            }
-                        } catch (e) {
-                            console.error(e);
-                        }
-                        navigator('/main');
-                    }
-                } catch (e) {
-                    console.error(e);
-                    alert('타입등록 실패.');
-                }
-            }
-        } catch (e) {
-            console.error(e);
-            alert('정보등록 실패.');
+    const handleSubmit = (event) => {
+        event.preventDefault();
+        if (campgroundId) {
+          updateCampsiteInfo();
+        } else {
+          console.error('campgroundId is null or undefined');
         }
-    }
+      };
     //=======================================================
 
     return (
@@ -188,9 +167,10 @@ const EnrollCamp = () => {
                 <div className="header">
                     캠핑장 수정
                 </div>
-
+               
                 <div className="photoContent">
                     <div className="Photo">
+                        <img src={campingInfo.main_photo}></img>
                         캠핑장 사진 등록
                     </div>
 
@@ -212,70 +192,72 @@ const EnrollCamp = () => {
                         </label>
                         <label> 이름 :
                             <input type="text" name="name"
-                                   value={enroll.name}
-                                   onChange={handleChange}
+                                   value={campingInfo.name}
+                                   onChange={handleInputChange}
                             />
                         </label>
                         <label> 숙소소개 :
                             <input type="text" name="description"
-                                   value={enroll.description}
-                                   onChange={handleChange}
+                                   value={campingInfo.description}
+                                   onChange={handleInputChange}
                             />
                         </label>
                         <label> 주소 :
                             <input type="text" name="address"
-                                   value={enroll.address}
-                                   onChange={handleChange}
+                                   value={campingInfo.address}
+                                   onChange={handleInputChange}
                             />
                         </label>
                         <label> 연락처 :
                             <input type="text" name="contact"
-                                   value={enroll.contact}
-                                   onChange={handleChange}
+                                   value={campingInfo.contact}
+                                   onChange={handleInputChange}
                             />
                         </label>
                         <div className="checkInOut">
                             <label> 체크인 시간 :
                                 <input type="time" name="check_in_time"
-                                       value={enroll.check_in_time}
-                                       onChange={handleChange}
+                                       value={campingInfo.check_in_time}
+                                       onChange={handleInputChange}
                                 />
                             </label>
                             <label> 체크아웃 시간 :
                                 <input type="time" name="check_out_time"
-                                       value={enroll.check_out_time}
-                                       onChange={handleChange}
+                                       value={campingInfo.check_out_time}
+                                       onChange={handleInputChange}
                                 />
                             </label>
                         </div>
                         <div className="checkInOut">
                             <label> 매너타임 시작 시간 :
                                 <input type="time" name="manner_start_time"
-                                       value={enroll.manner_start_time}
-                                       onChange={handleChange}
+                                       value={campingInfo.manner_start_time}
+                                       onChange={handleInputChange}
                                 />
                             </label>
                             <label> 매너타임 종료 시간 :
                                 <input type="time" name="manner_end_time"
-                                       value={enroll.manner_end_time}
-                                       onChange={handleChange}
+                                       value={campingInfo.manner_end_time}
+                                       onChange={handleInputChange}
                                 />
                             </label>
                         </div>
                         <label> 부대시설 :
                             <input type="text" name="emenities"
-                                   value={enroll.emenities}
-                                   onChange={handleChange}
+                                   value={campingInfo.emenities}
+                                   onChange={handleInputChange}
                             />
                         </label>
                     </div>
+                    <div className="button">
+                        <button type="submit">수정</button>
+                    </div>
+                    
                 </div>
-
+             
 
                 <div className="siteUpdate">
-
-                    
-                        <div className="siteUpdate1">
+                    <div className="siteUpdate1">
                         <div className="sitePhoto">
                             <div>첫번째</div>
                             사이트 사진 등록하기
@@ -301,9 +283,6 @@ const EnrollCamp = () => {
                             />
                         </label>
                     </div>
-
-                   
-                    
 
                     <div className="siteUpdate2">
                         <div className="sitePhoto">
@@ -383,11 +362,9 @@ const EnrollCamp = () => {
                 </div>
 
             </div>
-            <div className="button">
-                <button type="submit">수정</button>
-            </div>
-        </form>
+            </form>  
+        
     );
 };
 
-export default EnrollCamp;
+export default ModifyCamp;

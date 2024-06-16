@@ -51,6 +51,14 @@ const CampingDetail = () => {
     }
   }, [campgroundId]);
 
+  const handleInputChange = (event) => {
+    const { name, value } = event.target;
+    setCampingInfo({
+      ...campingInfo,
+      [name]: value
+    });
+  };
+  
   //캠핑장 정보를 가져오는 함수
   const fetchData = () => {
     fetch(`http://localhost:8080/main/campingDetail/${campgroundId}`)

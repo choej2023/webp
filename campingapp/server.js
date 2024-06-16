@@ -162,7 +162,6 @@ app.get('/main/campingDetail/:campgroundId/reserve', (req, res) => {
 app.post('/main/campingDetail/:campgroundId/reserve', (req, res) => {
   const { campsite_id, checkInDate, checkOutDate, adults, children, status, campgroundId } = req.body;
 
-
   // 날짜 겹침 확인 쿼리
   const overlapQuery = `
     SELECT * FROM reservations
@@ -192,6 +191,10 @@ app.post('/main/campingDetail/:campgroundId/reserve', (req, res) => {
   });
 });
 
+
+
+
+
 // 캠핑장 리뷰 정보를 저장하는 API
 app.post('/main/campingDetail/:campgroundId/reviews', upload.single('photo'), (req, res) => {
   const { campgroundId } = req.params;
@@ -209,6 +212,62 @@ app.post('/main/campingDetail/:campgroundId/reviews', upload.single('photo'), (r
     }
     res.status(201).json({ id: results.insertId, campgroundId, text, photo });
   });
+});
+
+// 캠핑장 사이트를 수정하는 API
+app.post('/main/campingDetail/:campgroundId/reviews', (req, res) => {
+  const { campgroundId } = req.params;
+  const { text, user_id } = req.body;
+  const photo = req.file ? `${req.file.filename}` : null; // 수정된 이미지 파일 이름 사용
+  console.log(req.body)
+
+  const query = 'INSERT INTO reviews (campground_id, user_id, text, photo) VALUES (?, ?, ?, ?)';
+  const values = [campgroundId, user_id, text, photo];
+
+  db.query(query, values, (error, results) => {
+    if (error) {
+      console.error('리뷰 등록 실패:', error);
+      return res.status(500).json({ error: '리뷰 등록 실패' });
+    }
+    res.status(201).json({ id: results.insertId, campgroundId, text, photo });
+  });
+});
+
+// 캠핑장 정보 수정 API
+app.put('/updateCampground/:campgroundId/update', upload.single('main_photo'), (req, res) => {
+  const campgroundId = req.params.campgroundId;
+  const { userId, name, description, address, contact, check_in_time, check_out_time, manner_start_time, manner_end_time } = req.body;
+  const main_photo = req.file ? `${req.file.filename}` : null; // 업로드된 이미지 파일 이름 사용
+
+  // 업데이트 쿼리 작성
+  const updateQuery = `
+    UPDATE campgrounds 
+    SET 
+      user_id = ?, 
+      name = ?, 
+      address = ?, 
+      contact = ?, 
+      description = ?, 
+      check_in_time = ?, 
+      check_out_time = ?, 
+      manner_start_time = ?, 
+      manner_end_time = ?, 
+      main_photo = ?
+    WHERE campground_id = ?
+  `;
+
+  db.query(
+      updateQuery,
+      [userId, name, address, contact, description, check_in_time, check_out_time, manner_start_time, manner_end_time, main_photo, campgroundId],
+      (error, results) => {
+        if (error) {
+          console.error('Error updating campground:', error);
+          return res.status(500).json({ error: '캠핑장 정보 업데이트 실패' });
+        }
+        console.log(`Campground with ID ${campgroundId} updated successfully.`);
+        res.json(results);
+      }
+  );
 });
 
 // 로그인3 API
@@ -329,6 +388,8 @@ app.post('/site', upload.single('photo'), (req, res) => {
     res.json({ success: true });
   });
 });
+
+
 
 
 
