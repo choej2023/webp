@@ -230,30 +230,28 @@ app.post('/login', (req, res) => {
 app.post('/filter', (req, res) => {
   const { name, checkIn, checkOut, address, type } = req.body;
   let query = `
-    SELECT campgrounds.*, 
-           GROUP_CONCAT(distinct campgroundtype.type SEPARATOR ', ') as types,
-           GROUP_CONCAT(distinct amenities.type separator ', ') as amenities
+    SELECT campgrounds.*,
+           GROUP_CONCAT(distinct campgroundtype.type SEPARATOR ', ') as types
     FROM campgrounds
-             LEFT OUTER JOIN campgroundtype ON campgrounds.campground_id = campgroundtype.campground_id
-             LEFT OUTER JOIN amenities ON campgrounds.campground_id = amenities.campground_id
+           LEFT OUTER JOIN campgroundtype ON campgrounds.campground_id = campgroundtype.campground_id
     WHERE 1 = 1
   `;
   let queryParams = [];
 
   if (name) {
-    query += `AND campgrounds.name LIKE ? `;
+    query += ` AND campgrounds.name LIKE ? `;
     queryParams.push(`%${name}%`);
   }
   if (address) {
-    query += `AND campgrounds.address LIKE ? `;
+    query += ` AND campgrounds.address LIKE ? `;
     queryParams.push(`%${address}%`);
   }
   if (type) {
-    query += `AND campgroundtype.type = ? `;
+    query += ` AND campgroundtype.type = ? `;
     queryParams.push(type);
   }
   if (checkIn !== '' && checkOut !== '') {
-    query += `AND campgrounds.campground_id NOT IN (
+    query += ` AND campgrounds.campground_id NOT IN (
       SELECT campgrounds.campground_id
       FROM campgrounds
       JOIN campsites ON campgrounds.campground_id = campsites.campground_id
@@ -280,6 +278,54 @@ app.post('/filter', (req, res) => {
     return res.status(200).send(response);
   });
 });
+
+// 캠핑장 등록 API
+app.post('/enroll', (req, res) => {
+  const { userId, name, description, address, contact, check_in_time, check_out_time, manner_start_time, manner_end_time, main_photo, amenities} = req.body;
+
+  const query = 'INSERT INTO campgrounds (user_id, name, address, contact, description, check_in_time, check_out_time, manner_start_time, manner_end_time, main_photo, amenities) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+
+  db.query(query, [userId, name, address, contact, description, check_in_time, check_out_time, manner_start_time, manner_end_time, main_photo, amenities], (error, results) => {
+    if (error) {
+      return res.status(500).json({ error: '캠핑장정보 등록 실패' });
+    }
+    const insertId = results.insertId;
+    res.json({ success: true, id: insertId });
+  });
+});
+
+// 캠핑장타입 등록 API
+app.post('/enrollType', (req, res) => {
+  const { campgroundType, id } = req.body;
+
+  console.log('Received data:', req.body); // req.body 출력
+
+  const query = 'INSERT INTO campgroundtype (campground_id, type) VALUES (?, ?)';
+
+  db.query(query, [id, campgroundType], (error, results) => {
+    if (error) {
+      console.error('캠핑장타입 등록 실패:', error);
+      return res.status(500).json({ error: '캠핑장타입 등록 실패' });
+    }
+    res.json({ success: true});
+  });
+});
+
+// 사이트 등록 API
+app.post('/site', (req, res) => {
+  const { campId, name, rate, capacity, photo } = req.body;
+
+  const query = 'INSERT INTO campsites (campground_id, name, rate, capacity, photo) VALUES (?, ?, ?, ?, ?)';
+
+  db.query(query, [campId, name, rate, capacity, photo], (error, results) => {
+    if (error) {
+      console.error('사이트 등록 실패:', error);
+      return res.status(500).json({ error: '사이트 등록 실패' });
+    }
+    res.json({ success: true});
+  });
+});
+
 
 // 이미지 파일 제공
 app.get(`${uploadFolder}/:filename`, (req, res) => {

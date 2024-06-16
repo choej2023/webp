@@ -258,6 +258,7 @@ const CampingDetail = () => {
             onChange={(e) => setChildren(e.target.value)}
           />
 
+
           <button onClick={handleReservation}>예약하기</button>
         </div>
         <div className="camping-info" id="camping-info">
