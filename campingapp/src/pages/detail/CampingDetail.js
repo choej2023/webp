@@ -190,6 +190,7 @@ const CampingDetail = () => {
     const formData = new FormData();
     formData.append("text", text);
     formData.append("photo", photo);
+    formData.append("user_id", localStorage.getItem("user_id"))
 
     fetch(`http://localhost:8080/main/campingDetail/${campgroundId}/reviews`, {
       method: "POST",

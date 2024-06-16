@@ -195,11 +195,12 @@ app.post('/main/campingDetail/:campgroundId/reserve', (req, res) => {
 // 캠핑장 리뷰 정보를 저장하는 API
 app.post('/main/campingDetail/:campgroundId/reviews', upload.single('photo'), (req, res) => {
   const { campgroundId } = req.params;
-  const { text } = req.body;
+  const { text, user_id } = req.body;
   const photo = req.file ? `${req.file.filename}` : null; // 수정된 이미지 파일 이름 사용
+  console.log(req.body)
 
-  const query = 'INSERT INTO reviews (campground_id, text, photo) VALUES (?, ?, ?)';
-  const values = [campgroundId, text, photo];
+  const query = 'INSERT INTO reviews (campground_id, user_id, text, photo) VALUES (?, ?, ?, ?)';
+  const values = [campgroundId, user_id, text, photo];
 
   db.query(query, values, (error, results) => {
     if (error) {
