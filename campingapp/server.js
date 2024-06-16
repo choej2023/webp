@@ -44,8 +44,8 @@ app.use((req, res, next) => {
 const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
-  password: 'root',
-  database: 'camping_db'
+  password: '1234',
+  database: 'WepDB'
 });
 
 db.connect((err) => {
@@ -158,7 +158,7 @@ app.post('/main/campingDetail/:campgroundId/reserve', (req, res) => {
     AND ((check_in_date <= ? AND check_out_date >= ?)
     OR (check_in_date <= ? AND check_out_date >= ?)
     OR (check_in_date >= ? AND check_out_date <= ?))
-  `;
+  `;  
 
   db.query(overlapQuery, [campgroundId, campsite_id, checkOutDate, checkInDate, checkInDate, checkOutDate, checkInDate, checkOutDate], (error, result) => {
     if (error) {
@@ -265,6 +265,39 @@ app.post('/filter', (req, res) => {
     return res.status(200).send(response);
   });
 });
+
+// 캠핑장 등록 API
+app.post('/enroll', (req, res) => {
+  const { userId, name, description, address, contact, check_in_time, check_out_time, manner_start_time, manner_end_time, main_photo} = req.body;
+
+  const query = 'INSERT INTO campgrounds (user_id, name, address, contact, description, check_in_time, check_out_time, manner_start_time, manner_end_time, main_photo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+
+  db.query(query, [userId, name, address, contact, description, check_in_time, check_out_time, manner_start_time, manner_end_time, main_photo], (error, results) => {
+    if (error) {
+      return res.status(500).json({ error: '캠핑장정보 등록 실패' });
+    }
+    const insertId = results.insertId;
+    res.json({ success: true, id: insertId });
+  });
+});
+
+// 캠핑장타입 등록 API
+app.post('/enrollType', (req, res) => {
+  const { campgroundType, id } = req.body;
+
+  console.log('Received data:', req.body); // req.body 출력
+
+  const query = 'INSERT INTO campgroundtype (campground_id, type) VALUES (?, ?)';
+
+  db.query(query, [id, campgroundType], (error, results) => {
+    if (error) {
+      console.error('캠핑장타입 등록 실패:', error);
+      return res.status(500).json({ error: '캠핑장타입 등록 실패' });
+    }
+    res.json({ success: true});
+  });
+});
+
 
 // 이미지 파일 제공
 app.get(`/:filename`, (req, res) => {

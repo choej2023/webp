@@ -57,7 +57,7 @@ export default function Main() {
     return (
         <div className="container2">
             <div className="upper-menu">
-                <button onClick={() => navigator('/enrollCampground')}>캠핑장 등록</button>
+                <button onClick={() => navigator('/EnrollCamp')}>캠핑장 등록</button>
                 <button onClick={() => navigator('/myPage')}>마이페이지</button>
                 <button onClick={logout}>로그아웃</button>
             </div>
