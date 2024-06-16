@@ -3,9 +3,13 @@ import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import './css/campingDetail.css';
-import { useParams} from "react-router-dom";
+import {useLocation, useNavigate, useParams} from "react-router-dom";
 
 const CampingDetail = () => {
+
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { item } = location.state || {}
 
   const settings = {
     dots: false,
@@ -268,6 +272,7 @@ const CampingDetail = () => {
           </Slider>
         </div>
         <div className="reservation">
+          <button onClick={() => navigate('/modifyCamp', {state: {campgroundId: campgroundId, campingInfo: campingInfo, type: item.types}})}>수정</button>
           <h2>캠핑장 예약</h2>
           <input
             type="text"
@@ -305,6 +310,9 @@ const CampingDetail = () => {
         </div>
         <div className="camping-info" id="camping-info">
           <h3>캠핑장 정보</h3>
+          <p>
+            <strong>타입: </strong> {item.types}
+          </p>
           <p>
             <strong>캠핑장:</strong> {campingInfo.name}
           </p>
