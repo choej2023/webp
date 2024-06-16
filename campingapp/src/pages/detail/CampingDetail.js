@@ -294,7 +294,7 @@ const CampingDetail = () => {
             className="site-item"
             onClick={() => handleSiteClick(index + 1)}
           >
-            <img src={site.photo} alt="" />
+            <img src={site.photo} alt="" className="site-image" />
             <div className="site-details">
               <p>
                 <strong>{site.name}</strong>

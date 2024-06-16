@@ -87,14 +87,18 @@ const EnrollCamp = () => {
                     if (response2.data.success) {
                         // 사이트 등록
                         const sitePromises = [1, 2, 3, 4].map(siteNumber => {
-                            const siteData = {
-                                campgroundId: response1.data.id,
-                                name: campsite[`site_name${siteNumber}`],
-                                rate: campsite[`site_rate${siteNumber}`],
-                                capacity: campsite[`site_capacity${siteNumber}`],
-                                photo: campsite[`site_photo${siteNumber}`]
-                            };
-                            return axios.post(REQUEST.SITE, siteData);
+                            const siteFormData = new FormData();
+                            siteFormData.append('campId', response1.data.id);
+                            siteFormData.append('name', campsite[`site_name${siteNumber}`]);
+                            siteFormData.append('rate', campsite[`site_rate${siteNumber}`]);
+                            siteFormData.append('capacity', campsite[`site_capacity${siteNumber}`]);
+                            siteFormData.append('photo', campsite[`site_photo${siteNumber}`]);
+
+                            return axios.post(REQUEST.SITE, siteFormData, {
+                                headers: {
+                                    'Content-Type': 'multipart/form-data'
+                                }
+                            });
                         });
 
                         Promise.all(sitePromises)

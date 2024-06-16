@@ -280,8 +280,9 @@ app.post('/filter', (req, res) => {
 });
 
 // 캠핑장 등록 API
-app.post('/enroll', (req, res) => {
-  const { userId, name, description, address, contact, check_in_time, check_out_time, manner_start_time, manner_end_time, main_photo, amenities} = req.body;
+app.post('/enroll', upload.single('main_photo'), (req, res) => {
+  const { userId, name, description, address, contact, check_in_time, check_out_time, manner_start_time, manner_end_time, amenities} = req.body;
+  const main_photo = req.file ? `${req.file.filename}` : null; // 수정된 이미지 파일 이름 사용
 
   const query = 'INSERT INTO campgrounds (user_id, name, address, contact, description, check_in_time, check_out_time, manner_start_time, manner_end_time, main_photo, amenities) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
@@ -312,8 +313,9 @@ app.post('/enrollType', (req, res) => {
 });
 
 // 사이트 등록 API
-app.post('/site', (req, res) => {
-  const { campId, name, rate, capacity, photo } = req.body;
+app.post('/site', upload.single('photo'), (req, res) => {
+  const { campId, name, rate, capacity } = req.body;
+  const photo = req.file ? req.file.filename : null;
 
   const query = 'INSERT INTO campsites (campground_id, name, rate, capacity, photo) VALUES (?, ?, ?, ?, ?)';
 
@@ -322,7 +324,7 @@ app.post('/site', (req, res) => {
       console.error('사이트 등록 실패:', error);
       return res.status(500).json({ error: '사이트 등록 실패' });
     }
-    res.json({ success: true});
+    res.json({ success: true });
   });
 });
 
