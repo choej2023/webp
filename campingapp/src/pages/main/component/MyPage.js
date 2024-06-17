@@ -20,7 +20,7 @@ const MyPage = () => {
     }, []);
 
     const fetchReviews = () => {
-        fetch("http://localhost:8080/MyPage/reviews")
+        fetch(`http://localhost:8080/MyPage/reviews/${localStorage.getItem('user_id')}`)
             .then(response => response.json())
             .then(data => {
                 setNewReview(data);
@@ -162,10 +162,13 @@ const MyPage = () => {
                             {formatDate(data.check_out_date) <= formatDate(new Date()) ||
                             data.status === 'Cancelled' ? null :
                                 <div>
-                                    <button
-                                        onClick={() => handleAcceptReservation(data.reservation_id, data.campsite_id)}>예약
-                                        수락
-                                    </button>
+                                    {data.status === 'Confirmed' ? null
+                                        :
+                                        <button
+                                            onClick={() => handleAcceptReservation(data.reservation_id, data.campsite_id)}>예약
+                                            수락
+                                        </button>
+                                    }
                                     <button
                                         onClick={() => handleCancelReservation(data.reservation_id, data.campsite_id, data.check_in_date)}>예약
                                         취소
@@ -177,7 +180,7 @@ const MyPage = () => {
                 </div>
             ))}
 
-            <h2>Reviews</h2>
+            <h2>My Reviews</h2>
             {newReview.map((review, index) => (
                 <div key={index}>
                     <p>{review.text}</p>

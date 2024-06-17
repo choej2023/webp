@@ -24,7 +24,6 @@ const ModifyCamp = () => {
             fetchSites();
             fetchType();
             fetchData();
-            console.log(campingInfo)
 
         }
     }, [campgroundId]);
@@ -48,7 +47,6 @@ const ModifyCamp = () => {
           })
           .then((data) => {
             setCampingInfo(data);
-              console.log("히히")
           })
           .catch((error) => {
             console.log(error)
@@ -83,9 +81,17 @@ const ModifyCamp = () => {
         try {
             const formData = new FormData();
             for (const key in campingInfo) {
-                formData.append(key, campingInfo[key]);
+                if (key === 'main_photo' && campingInfo[key] instanceof File) {
+                    formData.append('main_photo', campingInfo[key]);
+                } else {
+                    formData.append(key, campingInfo[key]);
+                }
             }
-            console.log(campingInfo)
+
+            console.log('FormData contents:');
+            formData.forEach((value, key) => {
+                console.log(key, value);
+            });
 
             const response = await axios.put(`${baseURL}/updateCampground/${campgroundId}/update`, formData, {
                 headers: {
@@ -95,7 +101,7 @@ const ModifyCamp = () => {
 
             if (response.status === 200) {
                 alert('캠핑장 정보가 성공적으로 업데이트되었습니다.');
-                navigator(-1)
+                navigator(-1);
             } else {
                 throw new Error('Network response was not ok');
             }
@@ -104,9 +110,9 @@ const ModifyCamp = () => {
         }
     };
 
+
     const handlePhotoChange = (e, siteNumber) => {
         const file = e.target.files[0];
-        console.log(campingInfo)
         if (siteNumber) {
             setCampsite((prev) => ({ ...prev, [`site_photo${siteNumber}`]: file }));
         } else {
@@ -190,7 +196,16 @@ const ModifyCamp = () => {
 
                 <div className="photoContent">
                     <div className="Photo">
-                        <img src={campingInfo.main_photo} alt=""/>
+                        <img
+                            src={
+                                campingInfo.main_photo && typeof campingInfo.main_photo === 'string'
+                                    ? campingInfo.main_photo
+                                    : campingInfo.main_photo
+                                        ? URL.createObjectURL(campingInfo.main_photo)
+                                        : ''
+                            }
+                            alt=""
+                        />
                         <input
                             type="file"
                             accept="image/*"

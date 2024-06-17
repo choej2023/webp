@@ -287,43 +287,79 @@ app.post('/enroll', upload.single('main_photo'), (req, res) => {
   });
 });
 
-// 캠핑장 업데이트
+//캠핑장 업데이트
 app.put('/updateCampground/:campgroundId/update', upload.single('main_photo'), (req, res) => {
   const campgroundId = req.params.campgroundId;
   const { user_id, name, description, address, contact, check_in_time, check_out_time, manner_start_time, manner_end_time, amenities } = req.body;
-  const main_photo = req.file ? `${req.file.filename}` : null;
-  console.log(req.body, main_photo);
+  const main_photo = req.file ? req.file.filename : null;
 
-  const updateQuery = `
-    UPDATE campgrounds
-    SET
-      user_id = ?,
-      name = ?,
-      address = ?,
-      contact = ?,
-      description = ?,
-      check_in_time = ?,
-      check_out_time = ?,
-      manner_start_time = ?,
-      manner_end_time = ?,
-      main_photo = ?,
-      amenities = ?
-    WHERE campground_id = ?
-  `;
+  console.log('Received data:', {
+    user_id,
+    name,
+    description,
+    address,
+    contact,
+    check_in_time,
+    check_out_time,
+    manner_start_time,
+    manner_end_time,
+    amenities,
+    main_photo
+  });
 
-  db.query(
-      updateQuery,
-      [user_id, name, address, contact, description, check_in_time, check_out_time, manner_start_time, manner_end_time, main_photo, amenities, campgroundId],
-      (error, results) => {
-        if (error) {
-          console.error('Error updating campground:', error);
-          return res.status(500).json({ error: '캠핑장 정보 업데이트 실패' });
-        }
-        console.log(`Campground with ID ${campgroundId} updated successfully.`);
-        res.json(results);
+  // 현재 캠핑장 정보를 가져와서 main_photo가 null인 경우 기존 값을 유지하도록 합니다.
+  const selectQuery = 'SELECT main_photo FROM campgrounds WHERE campground_id = ?';
+
+  db.query(selectQuery, [campgroundId], (selectError, selectResults) => {
+    if (selectError) {
+      console.error('Error selecting current campground photo:', selectError);
+      return res.status(500).json({ error: '캠핑장 정보 조회 실패' });
+    }
+
+    if (selectResults.length === 0) {
+      return res.status(404).json({ error: '캠핑장을 찾을 수 없습니다.' });
+    }
+
+    const currentMainPhoto = selectResults[0].main_photo;
+    const updatedMainPhoto = main_photo ? `http://localhost:8080/uploads/${main_photo}` : currentMainPhoto;
+
+    const updateQuery = `
+      UPDATE campgrounds
+      SET
+        user_id = ?,
+        name = ?,
+        address = ?,
+        contact = ?,
+        description = ?,
+        check_in_time = ?,
+        check_out_time = ?,
+        manner_start_time = ?,
+        manner_end_time = ?,
+        main_photo = ?,
+        amenities = ?
+      WHERE campground_id = ?
+    `;
+
+    const updateValues = [
+      user_id, name, address, contact, description,
+      check_in_time, check_out_time, manner_start_time,
+      manner_end_time, updatedMainPhoto, amenities, campgroundId
+    ];
+
+    console.log('Updating campground with values:', updateValues);
+
+    db.query(updateQuery, updateValues, (updateError, updateResults) => {
+      if (updateError) {
+        console.error('Error updating campground:', updateError);
+        return res.status(500).json({ error: '캠핑장 정보 업데이트 실패' });
       }
-  );
+      console.log(`Campground with ID ${campgroundId} updated successfully.`);
+      res.json({ message: '캠핑장 정보가 성공적으로 업데이트되었습니다.', results: updateResults });
+    });
+  });
 });
+
+
 
 // 캠핑장타입 등록 API
 app.post('/enrollType', (req, res) => {
@@ -392,10 +428,10 @@ app.get(`${uploadFolder}/:filename`, (req, res) => {
 
 
 // 리뷰 데이터 조회
-app.get('/MyPage/reviews', (req, res) => {
-
-  const query = 'SELECT text, photo FROM reviews';
-  db.query(query, (error, result) => {
+app.get('/MyPage/reviews/:user_id', (req, res) => {
+  const {user_id} = req.params
+  const query = 'SELECT text, photo FROM reviews WHERE user_id = ?';
+  db.query(query, [user_id], (error, result) => {
 
     if (error) {
       console.error('리뷰 데이터 조회 실패', error);
