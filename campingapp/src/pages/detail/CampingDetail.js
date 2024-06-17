@@ -1,12 +1,16 @@
-import React, { useEffect } from "react";
+import React, {useEffect, useState} from "react";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import './css/campingDetail.css';
-import { useState } from "react";
-import { useParams } from "react-router-dom";
+import {useLocation, useNavigate, useParams} from "react-router-dom";
 
 const CampingDetail = () => {
+
+  const navigate = useNavigate()
+  const location = useLocation()
+  const {isReview } = location.state || {}
+
   const settings = {
     dots: false,
     infinite: false,
@@ -18,6 +22,7 @@ const CampingDetail = () => {
   };
   // 상태 변수 정의
   const [campsite_id, setcampsite_id] = useState("");
+  const [clickCampsite, setClickCampsite] = useState("");
   const [checkInDate, setCheckInDate] = useState("");
   const [checkOutDate, setCheckOutDate] = useState("");
   const [adults, setAdults] = useState("");
@@ -32,7 +37,7 @@ const CampingDetail = () => {
   const [siteList, setSiteList] = useState([]);
   const [reservation, setReservation] = useState([]);
   const [mainPhoto, setMainPhoto] = useState("");
-  const [amenities, setAmenities] = useState([]);
+  const [dateError, setDateError] = useState("");
 
   useEffect(() => {
     if (campgroundId) {
@@ -41,7 +46,6 @@ const CampingDetail = () => {
       fetchSites();
       fetchReservation();
       fetchMainPhoto();
-      fetchAmenities();
     }
   }, [campgroundId]);
 
@@ -56,7 +60,6 @@ const CampingDetail = () => {
       })
       .then((data) => {
         setCampingInfo(data);
-        console.log("캠핑 정보: ", data);
       })
       .catch((error) => {
         setError(error.message || "An error occurred");
@@ -67,18 +70,7 @@ const CampingDetail = () => {
     fetch(`http://localhost:8080/main/campingDetail/${campgroundId}/main_photo`)
       .then((response) => response.json())
       .then((data) => {
-        setMainPhoto(data.main_photo);
-      })
-      .catch((error) => {
-        console.log("An error occured: ", error);
-      });
-  };
-  //시설 정보를 가져오는 함수
-  const fetchAmenities = () => {
-    fetch(`http://localhost:8080/main/campingDetail/${campgroundId}/amenities`)
-      .then((response) => response.json())
-      .then((data) => {
-        setAmenities(data);
+        setMainPhoto(data);
       })
       .catch((error) => {
         console.log("An error occured: ", error);
@@ -133,6 +125,15 @@ const CampingDetail = () => {
   // 예약 처리 함수
   const handleReservation = (e) => {
     e.preventDefault();
+
+    const today = new Date().toISOString().split("T")[0];
+    if (checkInDate < today || checkOutDate < today) {
+      setDateError("오늘 이후 날짜만 예약이 가능합니다.");
+      alert("오늘 이후 날짜만 예약이 가능합니다.");
+      return;
+    }
+    setDateError(""); // Clear any previous date error message
+
     const reservationData = {
       campsite_id,
       checkInDate: checkInDate,
@@ -142,7 +143,7 @@ const CampingDetail = () => {
       status,
       campgroundId,
     };
-    fetch(`http://localhost:8080/main/campingDetail/${campgroundId}/reserve`, {
+    fetch(`http://localhost:8080/main/campingDetail/${campgroundId}/reserve/${localStorage.getItem("user_id")}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -173,8 +174,11 @@ const CampingDetail = () => {
 
   // 사이트 클릭 핸들러 함수
   const handleSiteClick = (number) => {
+    // 전체 값을 사용하여 campsite_id 설정
     setcampsite_id(number);
+    setClickCampsite(number);
   };
+
 
   //리뷰 등록
   const handleTextChange = (event) => {
@@ -192,6 +196,7 @@ const CampingDetail = () => {
     const formData = new FormData();
     formData.append("text", text);
     formData.append("photo", photo);
+    formData.append("user_id", localStorage.getItem("user_id"))
 
     fetch(`http://localhost:8080/main/campingDetail/${campgroundId}/reviews`, {
       method: "POST",
@@ -212,14 +217,42 @@ const CampingDetail = () => {
       });
   };
 
+  // 날짜 조회 버튼 클릭 핸들러
+  const checkDate = () => {
+    const targetStartDate = new Date(checkInDate);
+    const targetEndDate = new Date(checkOutDate);
+    console.log(targetStartDate)
+    console.log(targetEndDate)
+
+    const updatedSiteList = siteList.map((site,index) => {
+      const isReserved = reservation.some((reservation) => {
+        const reservationStartDate = new Date(reservation.check_in_date);
+        const reservationEndDate = new Date(reservation.check_out_date);
+
+        return (
+          reservation.campsite_id === (index+1) &&
+          reservation.status === "pending" &&
+          !(targetEndDate < reservationStartDate || targetStartDate > reservationEndDate)
+        );
+      });
+
+      return {
+        ...site,
+        status: isReserved ? "대기" : "가능",
+      };
+    });
+
+    setSiteList(updatedSiteList);
+  };
+
   return (
     <div className="camping_container">
       <div className="container">
         <div className="carousel-container">
           <Slider {...settings}>
             {mainPhoto && (
-              <div key={mainPhoto}>
-                <img src={require(`../../../uploads/${mainPhoto}`)} alt="Main" />
+              <div key={mainPhoto} className="image-container">
+                <img src={mainPhoto} alt="Main" className="image"/>
               </div>
             )}
 
@@ -227,11 +260,12 @@ const CampingDetail = () => {
           </Slider>
         </div>
         <div className="reservation">
+          <button onClick={() => navigate('/modifyCamp', {state: {campgroundId, campingInfo, siteList}})}>수정</button>
           <h2>캠핑장 예약</h2>
           <input
             type="text"
             placeholder="사이트 이름"
-            value={campsite_id}
+            value={clickCampsite}
             onChange={(e) => setcampsite_id(e.target.value)}
           />
           <input
@@ -259,12 +293,16 @@ const CampingDetail = () => {
             onChange={(e) => setChildren(e.target.value)}
           />
 
+<button onClick={checkDate}>날짜 조회</button>
           <button onClick={handleReservation}>예약하기</button>
         </div>
         <div className="camping-info" id="camping-info">
           <h3>캠핑장 정보</h3>
           <p>
-            <strong>{campgroundId}번 캠핑장:</strong> {campingInfo.name}
+            <strong>타입: </strong> {campingInfo.type}
+          </p>
+          <p>
+            <strong>캠핑장:</strong> {campingInfo.name}
           </p>
           <p>
             <strong>숙소 소개:</strong> {campingInfo.description}
@@ -285,17 +323,19 @@ const CampingDetail = () => {
             <strong>매너타임:</strong> {campingInfo.manner_start_time} ~{" "}
             {campingInfo.manner_end_time}
           </p>
+          <p>
+            <strong>편의시설: </strong> {campingInfo.amenities}
+          </p>
         </div>
       </div>
       <div className="site-list">
-        <h3>안녕</h3>
         {siteList.map((site, index) => (
           <div
             key={site.id}
             className="site-item"
-            onClick={() => handleSiteClick(index + 1)}
+            onClick={() => handleSiteClick(site.name)}
           >
-            <img src={require(`../../../uploads/${site.photo}`)} alt="" />
+            <img src={site.photo} alt="" className="site-image" />
             <div className="site-details">
               <p>
                 <strong>{site.name}</strong>
@@ -307,56 +347,13 @@ const CampingDetail = () => {
                 <strong>수용 인원:</strong> {site.capacity}
               </p>
               <p>
-                <strong>상태: </strong>
-                {reservation.some(
-                  (reservation) =>         
-                    (reservation.campsite_id === (index + 1)) &&
-                    reservation.status === "pending"
-                )
-                  ? "대기"
-                  : "가능" 
-                  
-                  }
-                  
+                {console.log (site.status)}
+                <strong>상태: </strong> {site.status === 'pending' ? "대기 중" : (site.status === 'Confirmed') ? "불가능" : "가능"}
+
               </p>
             </div>
           </div>
         ))}
-      </div>
-      <div className="facility-information">
-        <h2>{campingInfo.name} 캠핑장</h2>
-        <div className="facility-container">
-          <div className="section">
-            <h2>부대시설</h2>
-            <ul>
-              {amenities
-                .filter((amenity) => amenity.type !== null)
-                .map((amenity, index) => (
-                  <li key={index} className="item">{amenity.type}</li>
-                ))}
-            </ul>
-          </div>
-          <div className="section">
-            <h2>놀거리</h2>
-            <ul>
-              {amenities
-                .filter((amenity) => amenity.play !== null)
-                .map((amenity, index) => (
-                  <li key={index} className="item">{amenity.play}</li>
-                ))}
-            </ul>
-          </div>
-          <div className="section">
-            <h2>주변 환경</h2>
-            <ul>
-              {amenities
-                .filter((amenity) => amenity.view !== null)
-                .map((amenity, index) => (
-                  <li key={index} className="item">{amenity.view}</li>
-                ))}
-            </ul>
-          </div>
-        </div>
       </div>
       <h2>{campingInfo.name} 리뷰 목록</h2>
 
@@ -367,7 +364,7 @@ const CampingDetail = () => {
               <div className="review-info">
                 <img
                   className="review-image"
-                  src={require(`../../../uploads/${review.photo}`)}
+                  src={review.photo}
                   alt=""
                 />
                 <p className="review-text">{review.text}</p>
@@ -377,28 +374,34 @@ const CampingDetail = () => {
         </div>
       </div>
 
-      <h2>리뷰 등록</h2>
-      <form
-        class="review-form"
-        onSubmit={handleSubmit}
-        enctype="multipart/form-data"
-      >
+
+      {isReview ? <div className="reviews">
+        <h2>리뷰 등록</h2>
+        <form
+            className="review-form"
+            onSubmit={handleSubmit}
+            encType="multipart/form-data"
+        >
         <textarea
-          className="review-textarea"
-          placeholder="리뷰를 입력하세요"
-          value={text}
-          onChange={handleTextChange}
+            className="review-textarea"
+            placeholder="리뷰를 입력하세요"
+            value={text}
+            onChange={handleTextChange}
         ></textarea>
-        <input
-          type="file"
-          className="review-file-input"
-          accept="image/*"
-          onChange={handlePhotoChange}
-        />
-        <button type="submit" class="review-submit-button">
-          리뷰 등록
-        </button>
-      </form>
+          <input
+              type="file"
+              className="review-file-input"
+              accept="image/*"
+              onChange={handlePhotoChange}
+          />
+          <button type="submit" className="review-submit-button">
+            리뷰 등록
+          </button>
+        </form>
+      </div>
+          :
+          null}
+
     </div>
   );
 };

@@ -35,7 +35,7 @@ export default function TopBar({formData, handleChange, handleSubmit}) {
                             <option value="">선택</option>
                             <option value="캠핑">캠핑</option>
                             <option value="글램핑">글램핑</option>
-                            <option value="캐러밴">캐러밴</option>
+                            <option value="카라반">카라반</option>
                             <option value="펜션">펜션</option>
                         </select>
                     </div>
