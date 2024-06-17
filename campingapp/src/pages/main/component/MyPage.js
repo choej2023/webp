@@ -117,7 +117,11 @@ const MyPage = () => {
                             <p>입실일: {formatDate(data.check_in_date)}</p>
                             <p>퇴실일: {formatDate(data.check_out_date)}</p>
                             <p>예약 상태: {formatDate(data.check_out_date) <= formatDate(new Date()) ? "Ended" : data.status}</p>
-                            {formatDate(data.check_out_date) <= formatDate(new Date()) ? null :
+                            {formatDate(data.check_out_date) <= formatDate(new Date()) ?
+                                <button>
+                                    후기 작성
+                                    {/*여기에 후기 작성 기능 가져오기*/}
+                                </button>:
                             <button
                                 onClick={() => handleCancelReservation(data.reservation_id, data.campsite_id, data.check_in_date)}>예약
                                 취소
