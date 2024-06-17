@@ -509,9 +509,9 @@ app.get('/api/reviews', (req, res) => {
 
 
 // 캠핑장 예약 취소 API
-app.delete('/main/MyPage/cancel/:campsite_id/:reservation_id', (req, res) => {
+app.put('/main/MyPage/cancel/:campsite_id/:reservation_id', (req, res) => {
   const { campsite_id, reservation_id } = req.params;
-  const sql = 'DELETE FROM reservations WHERE campsite_id = ? AND reservation_id = ?';
+  const sql = 'UPDATE reservations SET status = "Cancelled" WHERE campsite_id = ? AND reservation_id = ?';
   db.query(sql, [campsite_id, reservation_id], (error, result) => {
     if (error) {
       console.error('예약 취소 실패:', error);
@@ -521,6 +521,7 @@ app.delete('/main/MyPage/cancel/:campsite_id/:reservation_id', (req, res) => {
     res.json({ success: true, message: '예약이 성공적으로 취소되었습니다.' });
   });
 });
+
 
 
 

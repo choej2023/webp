@@ -53,15 +53,23 @@ const MyPage = () => {
         }
 
         fetch(`http://localhost:8080/main/MyPage/cancel/${campsite_id}/${reservation_id}`, {
-            method: 'DELETE',
+            method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
             }
         })
             .then(response => {
                 if (response.ok) {
-                    setUserData(prevData => prevData.filter(item => item.reservation_id !== reservation_id));
-                    setReservCamp(prevData => prevData.filter(item => item.reservation_id !== reservation_id));
+                    setUserData(prevData =>
+                        prevData.map(item =>
+                            item.reservation_id === reservation_id ? {...item, status: 'Cancelled'} : item
+                        )
+                    );
+                    setReservCamp(prevData =>
+                        prevData.map(item =>
+                            item.reservation_id === reservation_id ? {...item, status: 'Cancelled'} : item
+                        )
+                    );
                     console.log("Reservation canceled successfully.");
                 } else {
                     console.error("Failed to cancel reservation.");
@@ -70,6 +78,7 @@ const MyPage = () => {
             .catch(error => {
                 console.error("An error occurred while canceling reservation:", error);
             });
+
     };
 
     const formatDate = (dateString) => {
@@ -116,16 +125,21 @@ const MyPage = () => {
                             <p>어린이 수: {data.children}</p>
                             <p>입실일: {formatDate(data.check_in_date)}</p>
                             <p>퇴실일: {formatDate(data.check_out_date)}</p>
-                            <p>예약 상태: {formatDate(data.check_out_date) <= formatDate(new Date()) ? "Ended" : data.status}</p>
+                            <p>예약
+                                상태: {formatDate(data.check_out_date) <= formatDate(new Date()) ? "Ended" : data.status}</p>
                             {formatDate(data.check_out_date) <= formatDate(new Date()) ?
                                 <button>
                                     후기 작성
                                     {/*여기에 후기 작성 기능 가져오기*/}
-                                </button>:
-                            <button
-                                onClick={() => handleCancelReservation(data.reservation_id, data.campsite_id, data.check_in_date)}>예약
-                                취소
-                            </button>
+                                </button>
+                                :
+                                data.status === 'Cancelled' ?
+                                    null
+                                    :
+                                    <button
+                                        onClick={() => handleCancelReservation(data.reservation_id, data.campsite_id, data.check_in_date)}>예약
+                                        취소
+                                    </button>
                             }
                         </li>
                     </ul>
@@ -143,9 +157,10 @@ const MyPage = () => {
                             <p>어린이 수: {data.children}</p>
                             <p>입실일: {formatDate(data.check_in_date)}</p>
                             <p>퇴실일: {formatDate(data.check_out_date)}</p>
-                            <p>예약 상태: {formatDate(data.check_out_date) <= formatDate(new Date()) ? "Ended" : data.status}</p>
+                            <p>예약
+                                상태: {formatDate(data.check_out_date) <= formatDate(new Date()) ? "Ended" : data.status}</p>
                             {formatDate(data.check_out_date) <= formatDate(new Date()) ||
-                               data.status === 'Cancelled' ? null :
+                            data.status === 'Cancelled' ? null :
                                 <div>
                                     <button
                                         onClick={() => handleAcceptReservation(data.reservation_id, data.campsite_id)}>예약
