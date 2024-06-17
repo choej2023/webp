@@ -58,10 +58,15 @@ db.connect((err) => {
 
 // campground_id에 따라 데이터를 가져와서 화면에 출력하는 라우트
 app.get('/main/campingDetail/:campgroundId', (req, res) => {
-  const campgroundId = req.params.campgroundId;
+  const {campgroundId} = req.params;
   console.log('Received request for campground ID:', campgroundId);
   // 데이터베이스에서 해당하는 campground_id의 데이터를 가져오는 쿼리 실행
-  const sql = 'SELECT * FROM campgrounds WHERE campground_id = ?';
+  const sql = `SELECT campgrounds.*,
+                    GROUP_CONCAT(distinct campgroundtype.type SEPARATOR ', ') as type 
+                FROM campgrounds
+                LEFT OUTER JOIN campgroundtype ON campgrounds.campground_id = campgroundtype.campground_id
+                WHERE campgrounds.campground_id = ?`;
+
   db.query(sql, [campgroundId], (error, results) => {
     if (error) {
       console.error('Error fetching campground data:', error);
@@ -273,8 +278,8 @@ app.post('/filter', (req, res) => {
 
 // 캠핑장 등록 API
 app.post('/enroll', upload.single('main_photo'), (req, res) => {
-  const { userId, name, description, address, contact, check_in_time, check_out_time, manner_start_time, manner_end_time, amenities } = req.body;
-  const main_photo = req.file ? `${req.file.filename}` : null; // 수정된 이미지 파일 이름 사용
+  const { userId, campgroundType, name, description, address, contact, check_in_time, check_out_time, manner_start_time, manner_end_time, amenities } = req.body;
+  const main_photo = req.file ? `${req.file.filename}` : null;
 
   const query = 'INSERT INTO campgrounds (user_id, name, address, contact, description, check_in_time, check_out_time, manner_start_time, manner_end_time, main_photo, amenities) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
@@ -282,10 +287,41 @@ app.post('/enroll', upload.single('main_photo'), (req, res) => {
     if (error) {
       return res.status(500).json({ error: '캠핑장정보 등록 실패' });
     }
+
     const insertId = results.insertId;
-    res.json({ success: true, id: insertId });
+    const typeQuery = 'INSERT INTO campgroundtype (campground_id, type) VALUES (?, ?)';
+
+    // campgroundType을 쉼표로 분리하여 배열로 변환
+    const types = Array.isArray(campgroundType) ? campgroundType : campgroundType.split(',');
+
+    // 각 타입을 삽입하고 map을 사용하여 처리
+    const insertPromises = types.map(type => {
+      return new Promise((resolve, reject) => {
+        // 앞뒤 공백 제거
+        type = type.trim();
+        db.query(typeQuery, [insertId, type], (error) => {
+          if (error) {
+            console.error(`캠핑장 타입 삽입 실패: ${error}`);
+            reject(error);
+          } else {
+            resolve();
+          }
+        });
+      });
+    });
+
+    // 모든 삽입 작업이 완료된 후 응답을 보냄
+    Promise.all(insertPromises)
+        .then(() => {
+          res.json({ success: true, id: insertId });
+        })
+        .catch(error => {
+          res.status(500).json({ error: '캠핑장 타입 삽입 중 오류 발생' });
+        });
   });
 });
+
+
 
 //캠핑장 업데이트
 app.put('/updateCampground/:campgroundId/update', upload.single('main_photo'), (req, res) => {

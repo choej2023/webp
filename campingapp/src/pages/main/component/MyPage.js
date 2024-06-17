@@ -1,12 +1,13 @@
 import React, {useEffect, useState} from 'react';
 import axios from "axios";
 import {REQUEST} from "../../../config";
+import {useNavigate} from "react-router-dom";
 
 const MyPage = () => {
     const [userData, setUserData] = useState([]);
     const [reservCamp, setReservCamp] = useState();
     const [newReview, setNewReview] = useState([]);
-
+    const navigator = useNavigate()
     useEffect(() => {
         fetchReviews();
         fetchReservation();
@@ -128,7 +129,7 @@ const MyPage = () => {
                             <p>예약
                                 상태: {formatDate(data.check_out_date) <= formatDate(new Date()) ? "Ended" : data.status}</p>
                             {formatDate(data.check_out_date) <= formatDate(new Date()) ?
-                                <button>
+                                <button onClick={()=> navigator(`/main/campingDetail/${data.campground_id}`, {state: {isReview: true}})}>
                                     후기 작성
                                     {/*여기에 후기 작성 기능 가져오기*/}
                                 </button>

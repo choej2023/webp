@@ -1,8 +1,8 @@
 import "./EnrollCamp.css";
-import React, { useState } from "react";
+import React, {useState} from "react";
 import axios from 'axios';
 import {useLocation, useNavigate} from "react-router-dom";
-import { REQUEST } from "../../config";
+import {REQUEST} from "../../config";
 
 const EnrollCamp = () => {
     const navigator = useNavigate();
@@ -49,20 +49,20 @@ const EnrollCamp = () => {
     });
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
+        const {name, value} = e.target;
         if (name.startsWith("site_")) {
-            setCampsite((prev) => ({ ...prev, [name]: value }));
+            setCampsite((prev) => ({...prev, [name]: value}));
         } else {
-            setEnroll((prev) => ({ ...prev, [name]: value }));
+            setEnroll((prev) => ({...prev, [name]: value}));
         }
     };
 
     const handlePhotoChange = (e, siteNumber) => {
         const file = e.target.files[0];
         if (siteNumber) {
-            setCampsite((prev) => ({ ...prev, [`site_photo${siteNumber}`]: file }));
+            setCampsite((prev) => ({...prev, [`site_photo${siteNumber}`]: file}));
         } else {
-            setEnroll((prev) => ({ ...prev, main_photo: file }));
+            setEnroll((prev) => ({...prev, main_photo: file}));
         }
     };
 
@@ -82,42 +82,34 @@ const EnrollCamp = () => {
 
             if (response1.data.success) {
                 try {
-                    console.log(response1.data);
-                    const response2 = await axios.post(REQUEST.ENROLLTYPE, {
-                        campgroundType: enroll.campgroundType,
-                        id: response1.data.id
-                    });
-                    console.log('Enroll2 response:', response2.data); // 응답 데이터 출력
-                    if (response2.data.success) {
-                        // 사이트 등록
-                        const sitePromises = [1, 2, 3, 4].map(siteNumber => {
-                            const siteFormData = new FormData();
-                            siteFormData.append('campId', response1.data.id);
-                            siteFormData.append('name', campsite[`site_name${siteNumber}`]);
-                            siteFormData.append('rate', campsite[`site_rate${siteNumber}`]);
-                            siteFormData.append('capacity', campsite[`site_capacity${siteNumber}`]);
-                            siteFormData.append('photo', campsite[`site_photo${siteNumber}`]);
+                    // 사이트 등록
+                    const sitePromises = [1, 2, 3, 4].map(siteNumber => {
+                        const siteFormData = new FormData();
+                        siteFormData.append('campId', response1.data.id);
+                        siteFormData.append('name', campsite[`site_name${siteNumber}`]);
+                        siteFormData.append('rate', campsite[`site_rate${siteNumber}`]);
+                        siteFormData.append('capacity', campsite[`site_capacity${siteNumber}`]);
+                        siteFormData.append('photo', campsite[`site_photo${siteNumber}`]);
 
-                            return axios.post(REQUEST.SITE, siteFormData, {
-                                headers: {
-                                    'Content-Type': 'multipart/form-data'
+                        return axios.post(REQUEST.SITE, siteFormData, {
+                            headers: {
+                                'Content-Type': 'multipart/form-data'
+                            }
+                        });
+                    });
+
+                    Promise.all(sitePromises)
+                        .then(results => {
+                            results.forEach((result, index) => {
+                                if (result.data.success) {
+                                    console.log(`사이트${index + 1} 등록 성공`);
                                 }
                             });
+                        })
+                        .catch(error => {
+                            console.error('사이트 등록 실패', error);
                         });
-
-                        Promise.all(sitePromises)
-                            .then(results => {
-                                results.forEach((result, index) => {
-                                    if (result.data.success) {
-                                        console.log(`사이트${index + 1} 등록 성공`);
-                                    }
-                                });
-                            })
-                            .catch(error => {
-                                console.error('사이트 등록 실패', error);
-                            });
-                        navigator('/main');
-                    }
+                    navigator('/main');
                 } catch (e) {
                     console.error(e);
                     alert('타입등록 실패.');
@@ -129,6 +121,25 @@ const EnrollCamp = () => {
         }
     };
 
+    const handleCheckBoxChange = (e) => {
+        console.log(enroll.campgroundType)
+        const {value} = e.target;
+        setEnroll((prevState) => {
+            if (prevState.campgroundType.includes(value)) {
+                // 이미 선택된 항목이면 제거
+                return {
+                    ...prevState,
+                    campgroundType: prevState.campgroundType.filter((type) => type !== value)
+                };
+            } else {
+                // 선택된 항목을 추가
+                return {
+                    ...prevState,
+                    campgroundType: [...prevState.campgroundType, value]
+                };
+            }
+        });
+    };
     return (
         <form className="enrollForm" onSubmit={handleSubmit}>
             <div className="enrollContent">
@@ -147,21 +158,44 @@ const EnrollCamp = () => {
 
                     <div className="info">
                         <label> 캠핑장 종류 :
-                            <select
-                                name="campgroundType"
-                                value={enroll.campgroundType}
-                                onChange={handleChange}
-                            >
-                                <option value="">캠핑장 종류를 선택하세요</option>
-                                <option value="캠핑">캠핑</option>
-                                <option value="글램핑">글램핑</option>
-                                <option value="카라반">카라반</option>
-                                <option value="캠핑, 글램핑">캠핑, 글램핑</option>
-                                <option value="캠핑, 카라반">캠핑, 카라반</option>
-                                <option value="글램핑, 카라반">글램핑, 카라반</option>
-                                <option value="캠핑, 글램핑, 카라반">캠핑, 글램핑, 카라반</option>
-                            </select>
+                            <div>
+                                <input
+                                    type="checkbox"
+                                    name="campgroundType"
+                                    value="캠핑"
+                                    checked={enroll.campgroundType.includes("캠핑")}
+                                    onChange={handleCheckBoxChange}
+                                /> 캠핑
+                            </div>
+                            <div>
+                                <input
+                                    type="checkbox"
+                                    name="campgroundType"
+                                    value="글램핑"
+                                    checked={enroll.campgroundType.includes("글램핑")}
+                                    onChange={handleCheckBoxChange}
+                                /> 글램핑
+                            </div>
+                            <div>
+                                <input
+                                    type="checkbox"
+                                    name="campgroundType"
+                                    value="카라반"
+                                    checked={enroll.campgroundType.includes("카라반")}
+                                    onChange={handleCheckBoxChange}
+                                /> 카라반
+                            </div>
+                            <div>
+                                <input
+                                    type="checkbox"
+                                    name="campgroundType"
+                                    value="펜션"
+                                    checked={enroll.campgroundType.includes("펜션")}
+                                    onChange={handleCheckBoxChange}
+                                /> 펜션
+                            </div>
                         </label>
+
                         <label> 이름 :
                             <input type="text" name="name"
                                    value={enroll.name}

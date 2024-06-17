@@ -9,7 +9,7 @@ const CampingDetail = () => {
 
   const navigate = useNavigate()
   const location = useLocation()
-  const { item } = location.state || {}
+  const {isReview } = location.state || {}
 
   const settings = {
     dots: false,
@@ -298,7 +298,7 @@ const CampingDetail = () => {
         <div className="camping-info" id="camping-info">
           <h3>캠핑장 정보</h3>
           <p>
-            <strong>타입: </strong> {item.types}
+            <strong>타입: </strong> {campingInfo.type}
           </p>
           <p>
             <strong>캠핑장:</strong> {campingInfo.name}
@@ -372,28 +372,34 @@ const CampingDetail = () => {
         </div>
       </div>
 
-      <h2>리뷰 등록</h2>
-      <form
-        class="review-form"
-        onSubmit={handleSubmit}
-        enctype="multipart/form-data"
-      >
+
+      {isReview ? <div className="reviews">
+        <h2>리뷰 등록</h2>
+        <form
+            className="review-form"
+            onSubmit={handleSubmit}
+            encType="multipart/form-data"
+        >
         <textarea
-          className="review-textarea"
-          placeholder="리뷰를 입력하세요"
-          value={text}
-          onChange={handleTextChange}
+            className="review-textarea"
+            placeholder="리뷰를 입력하세요"
+            value={text}
+            onChange={handleTextChange}
         ></textarea>
-        <input
-          type="file"
-          className="review-file-input"
-          accept="image/*"
-          onChange={handlePhotoChange}
-        />
-        <button type="submit" class="review-submit-button">
-          리뷰 등록
-        </button>
-      </form>
+          <input
+              type="file"
+              className="review-file-input"
+              accept="image/*"
+              onChange={handlePhotoChange}
+          />
+          <button type="submit" className="review-submit-button">
+            리뷰 등록
+          </button>
+        </form>
+      </div>
+          :
+          null}
+
     </div>
   );
 };
