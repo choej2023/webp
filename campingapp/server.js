@@ -158,35 +158,46 @@ app.post('/main/campingDetail/:campgroundId/reserve/:user_id', (req, res) => {
   const { campsite_id, checkInDate, checkOutDate, adults, children, status } = req.body;
   const {campgroundId, user_id} = req.params;
 
-
-
-  // 날짜 겹침 확인 쿼리
-  const overlapQuery = `
+  const campsiteQuery = `select campsite_id from campsites where name = ? and campground_id = ?`
+  db.query(campsiteQuery, [campsite_id, campgroundId], (err,  result) => {
+    if (err) {
+      console.error("사이트 없음", err)
+      res.status(500).send("서버 오류: 사이트 번호 찾지 못함")
+      return res;
+    }
+    const site_id = result[0].campsite_id
+    // 날짜 겹침 확인 쿼리
+    const overlapQuery = `
     SELECT * FROM reservations
     WHERE campground_id = ? AND campsite_id = ?
     AND ((check_in_date <= ? AND check_out_date >= ?)
     OR (check_in_date <= ? AND check_out_date >= ?)
     OR (check_in_date >= ? AND check_out_date <= ?))
+    AND status != 'Cancelled'
   `;
 
-  db.query(overlapQuery, [campgroundId, campsite_id, checkOutDate, checkInDate, checkInDate, checkOutDate, checkInDate, checkOutDate], (error, result) => {
-    if (error) {
-      console.error("예약 날짜 확인 실패", error);
-      res.status(500).send("서버 오류: 예약 날짜 확인 실패");
-    } else if (result.length > 0) {
-      res.status(400).json({ message: "해당 날짜는 이미 예약되었습니다." });
-    } else {
-      const sqlQuery = 'INSERT INTO reservations (campsite_id, user_id, check_in_date, check_out_date, adults, children, status, campground_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
-      db.query(sqlQuery, [campsite_id,user_id, checkInDate, checkOutDate, adults, children, status, campgroundId], (err, result) => {
-        if (err) {
-          res.status(500).send(err);
-          console.error('Database query error:', err);
-          return;
-        }
-        res.json({ success: true });
-      });
-    }
-  });
+    db.query(overlapQuery, [campgroundId, site_id, checkOutDate, checkInDate, checkInDate, checkOutDate, checkInDate, checkOutDate], (error, result) => {
+      if (error) {
+        console.error("예약 날짜 확인 실패", error);
+        res.status(500).send("서버 오류: 예약 날짜 확인 실패");
+      } else if (result.length > 0) {
+        res.status(400).json({ message: "해당 날짜는 이미 예약되었습니다." });
+      } else {
+        const sqlQuery = 'INSERT INTO reservations (campsite_id, user_id, check_in_date, check_out_date, adults, children, status, campground_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+        db.query(sqlQuery, [site_id, user_id, checkInDate, checkOutDate, adults, children, status, campgroundId], (err, result) => {
+          if (err) {
+            res.status(500).send(err);
+            console.error('Database query error:', err);
+            return;
+          }
+          res.json({ success: true });
+        });
+      }
+    });
+  })
+
+
+
 });
 
 // 캠핑장 리뷰 정보를 저장하는 API

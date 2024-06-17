@@ -174,10 +174,11 @@ const CampingDetail = () => {
 
   // 사이트 클릭 핸들러 함수
   const handleSiteClick = (number) => {
-    setcampsite_id(number.slice(number.length - 1, number.length));
-
+    // 전체 값을 사용하여 campsite_id 설정
+    setcampsite_id(number);
     setClickCampsite(number);
   };
+
 
   //리뷰 등록
   const handleTextChange = (event) => {
@@ -346,6 +347,7 @@ const CampingDetail = () => {
                 <strong>수용 인원:</strong> {site.capacity}
               </p>
               <p>
+                {console.log (site.status)}
                 <strong>상태: </strong> {site.status === 'pending' ? "대기 중" : (site.status === 'Confirmed') ? "불가능" : "가능"}
 
               </p>
