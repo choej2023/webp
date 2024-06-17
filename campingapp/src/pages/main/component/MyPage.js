@@ -116,11 +116,13 @@ const MyPage = () => {
                             <p>어린이 수: {data.children}</p>
                             <p>입실일: {formatDate(data.check_in_date)}</p>
                             <p>퇴실일: {formatDate(data.check_out_date)}</p>
-                            <p>예약 상태: {data.status}</p>
+                            <p>예약 상태: {formatDate(data.check_out_date) <= formatDate(new Date()) ? "Ended" : data.status}</p>
+                            {formatDate(data.check_out_date) <= formatDate(new Date()) ? null :
                             <button
                                 onClick={() => handleCancelReservation(data.reservation_id, data.campsite_id, data.check_in_date)}>예약
                                 취소
                             </button>
+                            }
                         </li>
                     </ul>
                 </div>
@@ -137,14 +139,20 @@ const MyPage = () => {
                             <p>어린이 수: {data.children}</p>
                             <p>입실일: {formatDate(data.check_in_date)}</p>
                             <p>퇴실일: {formatDate(data.check_out_date)}</p>
-                            <p>예약 상태: {data.status}</p>
-                            <button onClick={() => handleAcceptReservation(data.reservation_id, data.campsite_id)}>예약
-                                수락
-                            </button>
-                            <button
-                                onClick={() => handleCancelReservation(data.reservation_id, data.campsite_id, data.check_in_date)}>예약
-                                취소
-                            </button>
+                            <p>예약 상태: {formatDate(data.check_out_date) <= formatDate(new Date()) ? "Ended" : data.status}</p>
+                            {formatDate(data.check_out_date) <= formatDate(new Date()) ||
+                               data.status === 'Cancelled' ? null :
+                                <div>
+                                    <button
+                                        onClick={() => handleAcceptReservation(data.reservation_id, data.campsite_id)}>예약
+                                        수락
+                                    </button>
+                                    <button
+                                        onClick={() => handleCancelReservation(data.reservation_id, data.campsite_id, data.check_in_date)}>예약
+                                        취소
+                                    </button>
+                                </div>}
+
                         </li>
                     </ul>
                 </div>
